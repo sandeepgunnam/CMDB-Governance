@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_cmdbgov_app.CMDBGovConfig</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description>Reads CMDB Governance configuration from x_cmdbgov_app.* system properties.</description>
+        <mobile_callable>false</mobile_callable>
+        <name>CMDBGovConfig</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script>/**
+ * CMDBGovConfig
+ * Reads the CMDB Governance configuration from system properties
+ * (all prefixed with "x_cmdbgov_app.") and returns a plain object.
+ *
+ * Scope: x_cmdbgov_app   Access: This application scope only
+ */
+var CMDBGovConfig = Class.create();
+
+CMDBGovConfig.PREFIX = 'x_cmdbgov_app.';
+
+CMDBGovConfig.DEFAULT_CLASSES =
+    'cmdb_ci_server,cmdb_ci_appl,cmdb_ci_db_instance,cmdb_ci_service_auto,cmdb_ci_business_app';
+
+CMDBGovConfig.DEFAULT_REQUIRED = JSON.stringify({
+    '_default': ['name', 'owned_by', 'support_group', 'assignment_group', 'install_status', 'operational_status'],
+    'cmdb_ci_server': ['ip_address', 'os', 'serial_number', 'location'],
+    'cmdb_ci_appl': ['version'],
+    'cmdb_ci_db_instance': ['version'],
+    'cmdb_ci_business_app': ['it_application_owner', 'business_criticality'],
+    'cmdb_ci_service_auto': ['busines_criticality']
+});
+
+CMDBGovConfig.prototype = {
+    initialize: function() {},
+
+    _prop: function(name, defaultValue) {
+        var v = gs.getProperty(CMDBGovConfig.PREFIX + name, '');
+        if (v === null || v === undefined || String(v).trim() === '')
+            return defaultValue;
+        return String(v).trim();
+    },
+
+    _int: function(name, defaultValue) {
+        var n = parseInt(this._prop(name, String(defaultValue)), 10);
+        return isNaN(n) || n &lt;= 0 ? defaultValue : n;
+    },
+
+    /**
+     * @returns {Object} configuration object used by the data source and engine
+     */
+    get: function() {
+        var classes = this._prop('classes', CMDBGovConfig.DEFAULT_CLASSES)
+            .split(',')
+            .map(function(s) { return s.trim(); })
+            .filter(function(s) { return s.length &gt; 0; });
+
+        var required;
+        var requiredError = '';
+        try {
+            required = JSON.parse(this._prop('required_fields', CMDBGovConfig.DEFAULT_REQUIRED));
+        } catch (e) {
+            requiredError = 'Property x_cmdbgov_app.required_fields is not valid JSON; defaults used.';
+            gs.warn('[CMDB Governance] ' + requiredError);
+            required = JSON.parse(CMDBGovConfig.DEFAULT_REQUIRED);
+        }
+
+        var authType = this._prop('remote.auth_type', 'basic').toLowerCase();
+        if (authType !== 'oauth2')
+            authType = 'basic';
+
+        return {
+            dataSource: this._prop('data_source', 'local').toLowerCase() === 'remote' ? 'remote' : 'local',
+            remoteUrl: this._prop('remote.instance_url', '').replace(/\/+$/, ''),
+            authType: authType,
+            authProfile: this._prop('remote.auth_profile', ''),
+            classes: classes,
+            scopeQuery: this._prop('scope_query', 'install_status!=7'),
+            staleDays: this._int('stale_days', 90),
+            required: required,
+            requiredError: requiredError,
+            drilldownLimit: this._int('drilldown_limit', 100),
+            duplicateGroupLimit: this._int('duplicate_group_limit', 500)
+        };
+    },
+
+    type: 'CMDBGovConfig'
+};
+</script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-18 04:54:05</sys_created_on>
+        <sys_id>8dffdede69ea5e4992d355492ae1c457</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
+        <sys_update_name>sys_script_include_8dffdede69ea5e4992d355492ae1c457</sys_update_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+    </sys_script_include>
+</record_update>

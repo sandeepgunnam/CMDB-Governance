@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_properties">
+    <sys_properties action="INSERT_OR_UPDATE">
+        <choices/>
+        <description>JSON object of required fields. "_default" applies to every class; add a key per class table for extra fields. Fields that do not exist on a class are ignored.</description>
+        <ignore_cache>false</ignore_cache>
+        <is_private>false</is_private>
+        <name>x_cmdbgov_app.required_fields</name>
+        <read_roles/>
+        <suffix>required_fields</suffix>
+        <type>string</type>
+        <value>{"_default":["name","owned_by","support_group","assignment_group","install_status","operational_status"],"cmdb_ci_server":["ip_address","os","serial_number","location"],"cmdb_ci_appl":["version"],"cmdb_ci_db_instance":["version"],"cmdb_ci_business_app":["it_application_owner","business_criticality"],"cmdb_ci_service_auto":["busines_criticality"]}</value>
+        <write_roles>x_cmdbgov_app.admin</write_roles>
+        <sys_class_name>sys_properties</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-18 04:54:05</sys_created_on>
+        <sys_id>5c583bfb98025dcb915926286504badd</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
+        <sys_update_name>sys_properties_5c583bfb98025dcb915926286504badd</sys_update_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+    </sys_properties>
+</record_update>
