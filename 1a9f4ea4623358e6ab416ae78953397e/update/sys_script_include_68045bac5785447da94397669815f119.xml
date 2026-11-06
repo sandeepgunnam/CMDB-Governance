@@ -318,29 +318,26 @@ CMDBGovDashboard.prototype = {
     },
 
     /**
-     * Admin-only form that queues a run. Rendered as a POST so a page load can
-     * never create a record; the processing script re-checks the role.
+     * Admin-only submit button that queues a run.
+     *
+     * This emits ONLY the button, never a form. The surrounding form is the
+     * platform's own <g:ui_form> in the Jelly page, which supplies the action
+     * URL and a valid CSRF token. An earlier version hand-built a <form> with
+     * a manually generated sysparm_ck; the browser discarded it as a nested
+     * form inside the platform frame, so clicking did nothing at all.
+     *
+     * The button's own name/value pair is what the processing script reads.
+     * The role is re-checked server-side in that script -- hiding the button
+     * here is only cosmetic.
      */
     _runButton: function () {
         if (!gs.hasRole('x_cmdbgov_app.admin')) {
             return ''
         }
-        var token = ''
-        try {
-            token = gs.getSessionToken()
-        } catch (e) {
-            token = ''
-        }
         return (
-            '<form method="post" action="' +
-            this._esc(this.PAGE) +
-            '">' +
-            '<input type="hidden" name="sysparm_ck" value="' +
-            this._esc(token) +
-            '"/>' +
-            '<input type="hidden" name="gov_action" value="queue_run"/>' +
-            '<button type="submit" class="gov-btn">Run assessment</button>' +
-            '</form>'
+            '<button type="submit" name="gov_action" value="queue_run" class="gov-btn">' +
+            'Run assessment' +
+            '</button>'
         )
     },
 

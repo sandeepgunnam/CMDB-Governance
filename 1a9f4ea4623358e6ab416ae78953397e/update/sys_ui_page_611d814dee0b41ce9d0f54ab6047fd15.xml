@@ -337,32 +337,67 @@
       govTab = 'overview';
     }
     new CMDBGovDashboard().render(govTab, govQueued);</g2:evaluate>
-  <g2:no_escape>$[jvar_gov_html]</g2:no_escape>
+  <!--
+    g:ui_form is the platform's own form tag. It supplies the POST action and a
+    valid CSRF token, which is what routes a submit to this page's processing
+    script. The dashboard's "Run assessment" control is a plain submit button
+    inside this form carrying name=gov_action value=queue_run.
+
+    Do not replace this with a hand-built form element: a nested form inside
+    the platform frame is discarded by the browser and the button then does
+    nothing when clicked.
+  -->
+  <g:ui_form>
+    <g2:no_escape>$[jvar_gov_html]</g2:no_escape>
+  </g:ui_form>
 </j:jelly>]]></html>
         <name>dash</name>
         <processing_script><![CDATA[/**
  * Processing script for x_cmdbgov_app_dash.do.
  *
- * Runs server-side only when the page is submitted (POST). Its single job is
- * to queue an assessment run for an administrator; the async business rule on
- * x_cmdbgov_app_run then executes it.
+ * Runs server-side only when the page is submitted (POST) through the
+ * <g:ui_form> in dash.html. Its single job is to queue an assessment run for
+ * an administrator; the async business rule on x_cmdbgov_app_run then
+ * executes it.
  *
- * The role is re-checked here, never trusted from the form: hiding the button
- * is only cosmetic, this check plus the create ACL is the real control.
+ * The submitted field is gov_action=queue_run, carried by the submit button's
+ * own name/value pair. UI page processing scripts expose posted fields as bare
+ * globals (as in the platform's own documented example), and request
+ * .getParameter is also available in some contexts, so both are read.
+ *
+ * The role is re-checked here and never trusted from the form: hiding the
+ * button is only cosmetic, this check plus the create ACL is the real control.
  *
  * This is the one and only write reachable from the dashboard.
  */
 ;(function () {
-    var action = '' + (request.getParameter('gov_action') || '')
+    var action = ''
+
+    // Posted field as a bare global - the documented UI page behaviour.
+    try {
+        if (typeof gov_action !== 'undefined' && gov_action) {
+            action = '' + gov_action
+        }
+    } catch (eGlobal) {
+        action = ''
+    }
+
+    // Fall back to the request object where it is available.
+    if (!action) {
+        try {
+            action = '' + (request.getParameter('gov_action') || '')
+        } catch (eRequest) {
+            action = ''
+        }
+    }
 
     if (action !== 'queue_run') {
-        response.sendRedirect('x_cmdbgov_app_dash.do')
+        // A plain GET, or a submit we do not recognise: just show the page.
         return
     }
 
     if (!gs.hasRole('x_cmdbgov_app.admin')) {
         gs.addErrorMessage(gs.getMessage('You need the CMDB Governance admin role to queue an assessment.'))
-        response.sendRedirect('x_cmdbgov_app_dash.do')
         return
     }
 
@@ -373,16 +408,18 @@
         var sysId = run.insert()
 
         if (sysId) {
-            response.sendRedirect('x_cmdbgov_app_dash.do?queued=1')
+            gs.addInfoMessage(
+                gs.getMessage(
+                    'Assessment queued. It normally finishes within a few seconds -- reload this page to see the new scores.'
+                )
+            )
             return
         }
         gs.addErrorMessage(gs.getMessage('The assessment run could not be queued.'))
     } catch (e) {
         gs.error('CMDB Governance dashboard could not queue a run: ' + (e.message || e))
-        gs.addErrorMessage(gs.getMessage('The assessment run could not be queued.'))
+        gs.addErrorMessage(gs.getMessage('The assessment run could not be queued: ' + (e.message || e)))
     }
-
-    response.sendRedirect('x_cmdbgov_app_dash.do')
 })()
 ]]></processing_script>
         <sys_class_name>sys_ui_page</sys_class_name>
