@@ -1,0 +1,720 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_cmdbgov_app.CMDBGovEngine</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description>CMDB governance assessment engine. run(runSysId) evaluates every active check against every active governed class through CMDBGovDataSource, writes Check Result rows, computes weighted pillar and overall scores, and closes out the Assessment Run.</description>
+        <mobile_callable>false</mobile_callable>
+        <name>CMDBGovEngine</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[/**
+ * CMDBGovEngine
+ *
+ * Executes one governance assessment and persists its results.
+ *
+ * READ/WRITE CONTRACT
+ *   - CMDB tables are READ ONLY, and only ever through CMDBGovDataSource.
+ *     This class contains no GlideRecord/GlideAggregate against any cmdb_*
+ *     table, and no insert/update/delete against anything outside the two
+ *     tables below.
+ *   - Writes are confined to x_cmdbgov_app_run and x_cmdbgov_app_result.
+ *   - Configuration tables (check, governed_class, required_field,
+ *     connection) are read only.
+ *
+ * SCORING AND DETAIL ROWS
+ *   Pillar scores are accumulated in memory, and only from scored checks
+ *   that produced status "ok" and a computable pass rate. Detail rows -
+ *   per-field completeness rows and per-group duplicate rows - are written
+ *   with an EMPTY pass_rate on purpose: that keeps them out of scoring (the
+ *   rule is "status ok and a non-empty pass_rate") so a check with many
+ *   detail rows cannot outweigh a check with one. Each check/class pair
+ *   contributes exactly one scored row.
+ *
+ * Usage: new CMDBGovEngine().run(runSysId)
+ */
+var CMDBGovEngine = Class.create()
+
+CMDBGovEngine.prototype = {
+    /** Number of largest duplicate groups persisted as detail rows. */
+    DUP_GROUP_ROWS: 25,
+
+    /** Pillars, and the property suffix holding each pillar's weight. */
+    PILLARS: ['ownership', 'quality', 'relationships', 'lifecycle'],
+
+    /** Pillar -> score field on x_cmdbgov_app_run. */
+    SCORE_FIELD: {
+        ownership: 'ownership_score',
+        quality: 'quality_score',
+        relationships: 'relationships_score',
+        lifecycle: 'lifecycle_score',
+    },
+
+    initialize: function () {
+        this._warnings = []
+    },
+
+    /* ============================================================== *
+     * Entry point
+     * ============================================================== */
+
+    /**
+     * @param {string} runSysId sys_id of an x_cmdbgov_app_run record
+     * @return {boolean} true when the run completed, false when it failed
+     */
+    run: function (runSysId) {
+        var startedMs = new Date().getTime()
+
+        var run = new GlideRecord('x_cmdbgov_app_run')
+        if (!runSysId || !run.get(runSysId)) {
+            gs.error('CMDBGovEngine: assessment run not found: ' + runSysId)
+            return false
+        }
+
+        this._warnings = []
+
+        try {
+            var connection = this._loadConnection(run)
+            var ds = new CMDBGovDataSource(connection)
+            var cfg = this._loadConfig(ds)
+            var classes = this._loadClasses(ds)
+            var checks = this._loadChecks()
+
+            if (!classes.length) {
+                this._warn('No active governed classes exist on the data source; nothing was assessed.')
+            }
+
+            // Step 3 - population per class.
+            var populations = {}
+            var totalCis = 0
+            for (var p = 0; p < classes.length; p++) {
+                var cls = classes[p]
+                var pop = 0
+                try {
+                    pop = ds.count(cls, cfg.scopeQuery)
+                } catch (ePop) {
+                    this._warn('Population count failed for ' + cls + ': ' + this._msg(ePop))
+                }
+                populations[cls] = pop
+                totalCis += pop
+            }
+
+            // Steps 4 and 5 - evaluate every check.
+            var acc = {}
+            for (var c = 0; c < checks.length; c++) {
+                var chk = checks[c]
+
+                if (chk.check_type === 'metric') {
+                    this._runMetric(run, ds, chk, cfg)
+                    continue
+                }
+
+                for (var k = 0; k < classes.length; k++) {
+                    this._runCheckForClass(run, ds, chk, classes[k], populations[classes[k]], cfg, acc)
+                }
+            }
+
+            // Step 6 - scores.
+            var scores = this._score(acc, cfg)
+
+            // Step 7 - close the run out.
+            run.setValue('state', 'complete')
+            for (var s = 0; s < this.PILLARS.length; s++) {
+                var pillar = this.PILLARS[s]
+                this._setNumber(run, this.SCORE_FIELD[pillar], scores.pillars[pillar])
+            }
+            this._setNumber(run, 'overall_score', scores.overall)
+            run.setValue('total_cis', totalCis)
+            run.setValue('governed_classes', classes.length)
+            run.setValue('warnings', this._warningText())
+            run.setValue('error_message', '')
+            run.setValue('completed', new GlideDateTime())
+            run.setValue('duration_seconds', Math.round((new Date().getTime() - startedMs) / 1000))
+            run.update()
+
+            return true
+        } catch (e) {
+            // Unexpected, run-level failure.
+            try {
+                run.setValue('state', 'failed')
+                run.setValue('error_message', this._truncate(this._msg(e), 4000))
+                run.setValue('warnings', this._warningText())
+                run.setValue('completed', new GlideDateTime())
+                run.setValue('duration_seconds', Math.round((new Date().getTime() - startedMs) / 1000))
+                run.update()
+            } catch (eUpdate) {
+                gs.error('CMDBGovEngine: could not mark run ' + runSysId + ' as failed: ' + this._msg(eUpdate))
+            }
+            gs.error('CMDBGovEngine: run ' + runSysId + ' failed: ' + this._msg(e))
+            return false
+        }
+    },
+
+    /* ============================================================== *
+     * Step 1 - configuration loading
+     * ============================================================== */
+
+    _loadConnection: function (run) {
+        // Prefer the connection recorded on the run, else the first active one.
+        var sysId = run.getValue('connection')
+        var gr = new GlideRecord('x_cmdbgov_app_connection')
+
+        if (sysId && gr.get(sysId)) {
+            if (gr.getValue('active') !== '1') {
+                this._warn('Connection "' + gr.getValue('name') + '" is inactive; using it anyway as it is pinned to this run.')
+            }
+            return gr
+        }
+
+        var active = new GlideRecord('x_cmdbgov_app_connection')
+        active.addQuery('active', true)
+        active.orderBy('name')
+        active.setLimit(1)
+        active.query()
+        if (!active.next()) {
+            throw new Error('No active Governance Connection exists. Create one before running an assessment.')
+        }
+        if (!sysId) {
+            run.setValue('connection', active.getUniqueValue())
+        }
+        return active
+    },
+
+    _loadConfig: function (ds) {
+        var staleDays = this._toInt(gs.getProperty('x_cmdbgov_app.stale_days', '90'), 90)
+
+        var staleGdt = new GlideDateTime()
+        staleGdt.addDaysUTC(-staleDays)
+
+        var cfg = {
+            scopeQuery: ('' + gs.getProperty('x_cmdbgov_app.scope_query', '')).trim(),
+            staleDays: staleDays,
+            staleDate: staleGdt.getValue(), // UTC, yyyy-MM-dd HH:mm:ss
+            now: new GlideDateTime().getValue(), // UTC, yyyy-MM-dd HH:mm:ss
+            drilldownLimit: this._toInt(gs.getProperty('x_cmdbgov_app.drilldown_limit', '100'), 100),
+            duplicateGroupLimit: this._toInt(gs.getProperty('x_cmdbgov_app.duplicate_group_limit', '500'), 500),
+            instanceUrl: ds.instanceUrl(),
+            pillarWeights: {},
+        }
+
+        for (var i = 0; i < this.PILLARS.length; i++) {
+            var pillar = this.PILLARS[i]
+            cfg.pillarWeights[pillar] = this._toNumber(
+                gs.getProperty('x_cmdbgov_app.weight.' + pillar, '0'),
+                0
+            )
+        }
+
+        return cfg
+    },
+
+    /**
+     * Active governed classes that actually exist on the data source.
+     * Missing classes are skipped with a warning.
+     */
+    _loadClasses: function (ds) {
+        var classes = []
+        var gr = new GlideRecord('x_cmdbgov_app_governed_class')
+        gr.addQuery('active', true)
+        gr.orderBy('order')
+        gr.orderBy('ci_class')
+        gr.query()
+
+        while (gr.next()) {
+            var cls = gr.getValue('ci_class')
+            if (!cls) {
+                continue
+            }
+            var exists = false
+            try {
+                exists = ds.tableExists(cls)
+            } catch (e) {
+                this._warn('Could not verify governed class ' + cls + ': ' + this._msg(e))
+                continue
+            }
+            if (!exists) {
+                this._warn('Governed class ' + cls + ' does not exist on the data source; skipped.')
+                continue
+            }
+            classes.push(cls)
+        }
+        return classes
+    },
+
+    /** Active checks, ordered, flattened to plain objects. */
+    _loadChecks: function () {
+        var checks = []
+        var gr = new GlideRecord('x_cmdbgov_app_check')
+        gr.addQuery('active', true)
+        gr.orderBy('order')
+        gr.orderBy('code')
+        gr.query()
+
+        while (gr.next()) {
+            checks.push({
+                sys_id: gr.getUniqueValue(),
+                code: gr.getValue('code'),
+                name: gr.getValue('name'),
+                pillar: gr.getValue('pillar'),
+                check_type: gr.getValue('check_type'),
+                severity: gr.getValue('severity'),
+                weight: this._toNumber(gr.getValue('weight'), 0),
+                failure_condition: gr.getValue('failure_condition') || '',
+                fallback_condition: gr.getValue('fallback_condition') || '',
+                required_field: gr.getValue('required_field') || '',
+                duplicate_field: gr.getValue('duplicate_field') || '',
+                metric_table: gr.getValue('metric_table') || '',
+                excluded_class_prefixes: gr.getValue('excluded_class_prefixes') || '',
+                scored: gr.getValue('scored') === '1',
+            })
+        }
+        return checks
+    },
+
+    /** Active required fields applying to a class: all-class rows plus its own. */
+    _loadRequiredFields: function (cls) {
+        var fields = []
+        var seen = {}
+        var gr = new GlideRecord('x_cmdbgov_app_required_field')
+        gr.addQuery('active', true)
+        var qc = gr.addQuery('applies_to_all_classes', true)
+        qc.addOrCondition('ci_class', cls)
+        gr.orderBy('field_name')
+        gr.query()
+
+        while (gr.next()) {
+            var f = gr.getValue('field_name')
+            if (f && !seen[f]) {
+                seen[f] = true
+                fields.push(f)
+            }
+        }
+        return fields
+    },
+
+    /* ============================================================== *
+     * Step 4 - per-class check evaluation
+     * ============================================================== */
+
+    _runCheckForClass: function (run, ds, chk, cls, population, cfg, acc) {
+        try {
+            // Excluded classes.
+            if (this._isExcluded(chk, cls)) {
+                this._insertResult(run, chk, cls, {
+                    status: 'not_applicable',
+                    error_message: 'Class matches an excluded prefix (' + chk.excluded_class_prefixes + ').',
+                })
+                return
+            }
+
+            // Applicability via required_field, with fallback.
+            var condition = chk.failure_condition
+            if (chk.required_field && !ds.fieldExists(cls, chk.required_field)) {
+                if (!chk.fallback_condition) {
+                    this._insertResult(run, chk, cls, {
+                        status: 'not_applicable',
+                        error_message:
+                            'Field ' + chk.required_field + ' does not exist on ' + cls + ' and no fallback condition is set.',
+                    })
+                    return
+                }
+                condition = chk.fallback_condition
+            }
+
+            if (chk.check_type === 'completeness') {
+                this._runCompleteness(run, ds, chk, cls, population, cfg, acc)
+                return
+            }
+            if (chk.check_type === 'duplicates') {
+                this._runDuplicates(run, ds, chk, cls, population, cfg, acc)
+                return
+            }
+            this._runCondition(run, ds, chk, cls, population, cfg, acc, condition)
+        } catch (e) {
+            // One check/class failure must never stop the run, and must not score.
+            this._insertResult(run, chk, cls, {
+                status: 'error',
+                error_message: this._truncate(this._msg(e), 1000),
+            })
+            this._warn(chk.code + ' failed on ' + cls + ': ' + this._msg(e))
+        }
+    },
+
+    _runCondition: function (run, ds, chk, cls, population, cfg, acc, rawCondition) {
+        var condition = this._applyTokens(rawCondition, cfg)
+        var query = this._withScope(cfg.scopeQuery, condition)
+
+        var failing = ds.count(cls, query)
+        var passRate = this._passRate(population, failing)
+
+        this._insertResult(run, chk, cls, {
+            population: population,
+            failing: failing,
+            pass_rate: passRate,
+            status: 'ok',
+            failing_query: this._truncate(query, 4000),
+            list_url: this._listUrl(cfg, cls, query),
+        })
+
+        this._accumulate(acc, chk, passRate)
+    },
+
+    /**
+     * One detail row per required field (field_name set, pass_rate empty),
+     * plus one class-level row carrying the scored pass rate:
+     *   1 - sum(empty) / (population x field count)
+     */
+    _runCompleteness: function (run, ds, chk, cls, population, cfg, acc) {
+        var fields = this._loadRequiredFields(cls)
+        var present = []
+        for (var i = 0; i < fields.length; i++) {
+            if (ds.fieldExists(cls, fields[i])) {
+                present.push(fields[i])
+            }
+        }
+
+        if (!present.length) {
+            this._insertResult(run, chk, cls, {
+                status: 'not_applicable',
+                population: population,
+                error_message: 'No active required fields exist on ' + cls + '.',
+            })
+            return
+        }
+
+        var totalEmpty = 0
+        for (var f = 0; f < present.length; f++) {
+            var field = present[f]
+            var query = this._withScope(cfg.scopeQuery, field + 'ISEMPTY')
+            var empty = ds.count(cls, query)
+            totalEmpty += empty
+
+            // Detail row - pass_rate deliberately empty so it is not scored.
+            this._insertResult(run, chk, cls, {
+                field_name: field,
+                population: population,
+                failing: empty,
+                status: 'ok',
+                failing_query: this._truncate(query, 4000),
+                list_url: this._listUrl(cfg, cls, query),
+            })
+        }
+
+        var denominator = population * present.length
+        var passRate = denominator > 0 ? this._round1(100 * (1 - totalEmpty / denominator)) : null
+
+        // Class-level scored row.
+        this._insertResult(run, chk, cls, {
+            population: population,
+            failing: totalEmpty,
+            pass_rate: passRate,
+            status: 'ok',
+        })
+
+        this._accumulate(acc, chk, passRate)
+    },
+
+    /**
+     * Groups of two or more sharing duplicate_field. failing is the sum of
+     * the group member counts. The largest groups are persisted as detail
+     * rows (group_value set, pass_rate empty).
+     */
+    _runDuplicates: function (run, ds, chk, cls, population, cfg, acc) {
+        var field = chk.duplicate_field || 'name'
+        if (!ds.fieldExists(cls, field)) {
+            this._insertResult(run, chk, cls, {
+                status: 'not_applicable',
+                error_message: 'Duplicate field ' + field + ' does not exist on ' + cls + '.',
+            })
+            return
+        }
+
+        var scopedQuery = this._withScope(cfg.scopeQuery, field + 'ISNOTEMPTY')
+        var groups = ds.groupCount(cls, field, scopedQuery, 2, cfg.duplicateGroupLimit)
+
+        var failing = 0
+        for (var g = 0; g < groups.length; g++) {
+            failing += groups[g].count
+        }
+
+        var limit = groups.length < this.DUP_GROUP_ROWS ? groups.length : this.DUP_GROUP_ROWS
+        for (var d = 0; d < limit; d++) {
+            var group = groups[d]
+            var groupQuery = this._withScope(cfg.scopeQuery, field + '=' + group.value)
+
+            // Detail row - pass_rate deliberately empty so it is not scored.
+            this._insertResult(run, chk, cls, {
+                group_value: this._truncate(group.display || group.value, 255),
+                population: population,
+                failing: group.count,
+                status: 'ok',
+                failing_query: this._truncate(groupQuery, 4000),
+                list_url: this._listUrl(cfg, cls, groupQuery),
+            })
+        }
+
+        var passRate = this._passRate(population, failing)
+
+        this._insertResult(run, chk, cls, {
+            population: population,
+            failing: failing,
+            pass_rate: passRate,
+            status: 'ok',
+            failing_query: this._truncate(scopedQuery, 4000),
+            list_url: this._listUrl(cfg, cls, scopedQuery),
+        })
+
+        this._accumulate(acc, chk, passRate)
+    },
+
+    /* ============================================================== *
+     * Step 5 - metrics (instance-wide, scope_query NOT applied)
+     * ============================================================== */
+
+    _runMetric: function (run, ds, chk, cfg) {
+        var table = chk.metric_table
+        try {
+            if (!table) {
+                this._insertResult(run, chk, '', {
+                    status: 'not_applicable',
+                    error_message: 'No metric table is configured.',
+                })
+                return
+            }
+            if (!ds.tableExists(table)) {
+                this._insertResult(run, chk, '', {
+                    status: 'not_applicable',
+                    ci_class: table,
+                    error_message: 'Table ' + table + ' does not exist on the data source.',
+                })
+                return
+            }
+
+            var condition = this._applyTokens(chk.failure_condition, cfg)
+            var value = ds.count(table, condition)
+
+            this._insertResult(run, chk, '', {
+                ci_class: table,
+                metric_value: value,
+                status: 'ok',
+                failing_query: this._truncate(condition, 4000),
+                list_url: this._listUrl(cfg, table, condition),
+            })
+        } catch (e) {
+            this._insertResult(run, chk, '', {
+                status: 'error',
+                ci_class: table,
+                error_message: this._truncate(this._msg(e), 1000),
+            })
+            this._warn('Metric ' + chk.code + ' failed: ' + this._msg(e))
+        }
+    },
+
+    /* ============================================================== *
+     * Step 6 - scoring
+     * ============================================================== */
+
+    /** Accumulates a scored contribution for a check's pillar. */
+    _accumulate: function (acc, chk, passRate) {
+        if (!chk.scored) {
+            return
+        }
+        if (passRate === null || passRate === undefined) {
+            return
+        }
+        if (!chk.pillar) {
+            return
+        }
+        var weight = chk.weight > 0 ? chk.weight : 0
+        if (weight <= 0) {
+            return
+        }
+        if (!acc[chk.pillar]) {
+            acc[chk.pillar] = { weighted: 0, weight: 0 }
+        }
+        acc[chk.pillar].weighted += passRate * weight
+        acc[chk.pillar].weight += weight
+    },
+
+    _score: function (acc, cfg) {
+        var result = { pillars: {}, overall: null }
+        var overallWeighted = 0
+        var overallWeight = 0
+
+        for (var i = 0; i < this.PILLARS.length; i++) {
+            var pillar = this.PILLARS[i]
+            var bucket = acc[pillar]
+
+            if (!bucket || bucket.weight <= 0) {
+                result.pillars[pillar] = null
+                continue
+            }
+
+            var raw = bucket.weighted / bucket.weight
+            result.pillars[pillar] = this._round1(raw)
+
+            // Pillars with no score are ignored in the overall figure.
+            var pillarWeight = cfg.pillarWeights[pillar] || 0
+            if (pillarWeight > 0) {
+                overallWeighted += raw * pillarWeight
+                overallWeight += pillarWeight
+            }
+        }
+
+        result.overall = overallWeight > 0 ? this._round1(overallWeighted / overallWeight) : null
+        return result
+    },
+
+    /* ============================================================== *
+     * Persistence - x_cmdbgov_app_result only
+     * ============================================================== */
+
+    _insertResult: function (run, chk, cls, data) {
+        var gr = new GlideRecord('x_cmdbgov_app_result')
+        gr.initialize()
+        gr.setValue('run', run.getUniqueValue())
+        gr.setValue('check', chk.sys_id)
+        gr.setValue('pillar', chk.pillar)
+        if (cls) {
+            gr.setValue('ci_class', cls)
+        }
+
+        for (var key in data) {
+            if (!data.hasOwnProperty(key)) {
+                continue
+            }
+            var value = data[key]
+            if (value === null || value === undefined) {
+                continue
+            }
+            gr.setValue(key, value)
+        }
+        return gr.insert()
+    },
+
+    /* ============================================================== *
+     * Query helpers
+     * ============================================================== */
+
+    /** {STALE_DATE} and {NOW} substitution. */
+    _applyTokens: function (query, cfg) {
+        if (!query) {
+            return ''
+        }
+        return ('' + query).split('{STALE_DATE}').join(cfg.staleDate).split('{NOW}').join(cfg.now)
+    },
+
+    /**
+     * Combines the scope query with a condition. ^NQ starts a fresh query in
+     * an encoded query, so the scope has to be re-applied to EVERY segment,
+     * otherwise the segments after the first would match the whole table.
+     */
+    _withScope: function (scopeQuery, condition) {
+        var scope = (scopeQuery || '').trim()
+        var cond = (condition || '').trim()
+
+        if (!cond) {
+            return scope
+        }
+        if (!scope) {
+            return cond
+        }
+
+        var segments = cond.split('^NQ')
+        for (var i = 0; i < segments.length; i++) {
+            segments[i] = scope + '^' + segments[i]
+        }
+        return segments.join('^NQ')
+    },
+
+    _listUrl: function (cfg, table, query) {
+        if (!table) {
+            return ''
+        }
+        var url = cfg.instanceUrl + table + '_list.do?sysparm_query=' + encodeURIComponent(query || '')
+        return this._truncate(url, 1024)
+    },
+
+    _isExcluded: function (chk, cls) {
+        if (!chk.excluded_class_prefixes) {
+            return false
+        }
+        var prefixes = chk.excluded_class_prefixes.split(',')
+        for (var i = 0; i < prefixes.length; i++) {
+            var prefix = prefixes[i].trim()
+            if (prefix && cls.indexOf(prefix) === 0) {
+                return true
+            }
+        }
+        return false
+    },
+
+    /* ============================================================== *
+     * Small utilities
+     * ============================================================== */
+
+    /** 100 x (1 - failing/population), or null when the population is 0. */
+    _passRate: function (population, failing) {
+        if (!population || population <= 0) {
+            return null
+        }
+        return this._round1(100 * (1 - failing / population))
+    },
+
+    _round1: function (value) {
+        return Math.round(value * 10) / 10
+    },
+
+    _setNumber: function (gr, field, value) {
+        gr.setValue(field, value === null || value === undefined ? '' : value)
+    },
+
+    _warn: function (text) {
+        this._warnings.push(text)
+        gs.info('CMDBGovEngine: ' + text)
+    },
+
+    _warningText: function () {
+        return this._warnings.length ? this._truncate(this._warnings.join('\n'), 4000) : ''
+    },
+
+    _msg: function (e) {
+        if (!e) {
+            return 'Unknown error'
+        }
+        return '' + (e.message || e)
+    },
+
+    _truncate: function (text, max) {
+        var str = '' + (text === null || text === undefined ? '' : text)
+        return str.length > max ? str.substring(0, max) : str
+    },
+
+    _toInt: function (value, fallback) {
+        var parsed = parseInt(value, 10)
+        return isNaN(parsed) ? fallback : parsed
+    },
+
+    _toNumber: function (value, fallback) {
+        var parsed = parseFloat(value)
+        return isNaN(parsed) ? fallback : parsed
+    },
+
+    type: 'CMDBGovEngine',
+}
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 11:26:55</sys_created_on>
+        <sys_id>2059f4f22dc94bbdb5b67130e78316a0</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>CMDBGovEngine</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_script_include_2059f4f22dc94bbdb5b67130e78316a0</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 11:26:55</sys_updated_on>
+    </sys_script_include>
+</record_update>

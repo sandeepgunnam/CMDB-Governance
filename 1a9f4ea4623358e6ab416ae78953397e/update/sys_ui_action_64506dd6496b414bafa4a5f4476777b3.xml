@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="sys_ui_action">
+    <sys_ui_action action="INSERT_OR_UPDATE">
+        <action_name>run_assessment</action_name>
+        <active>true</active>
+        <client>false</client>
+        <client_script_v2/>
+        <comments/>
+        <condition/>
+        <form_action>false</form_action>
+        <form_button>false</form_button>
+        <form_button_icon/>
+        <form_button_v2>false</form_button_v2>
+        <form_context_menu>false</form_context_menu>
+        <form_link>false</form_link>
+        <form_menu_button_v2>false</form_menu_button_v2>
+        <form_style/>
+        <format_for_configurable_workspace>false</format_for_configurable_workspace>
+        <hint>Queue a new CMDB governance assessment against the active connection.</hint>
+        <isolate_script>false</isolate_script>
+        <list_action>true</list_action>
+        <list_banner_button>true</list_banner_button>
+        <list_button>false</list_button>
+        <list_button_icon/>
+        <list_choice>false</list_choice>
+        <list_context_menu>false</list_context_menu>
+        <list_link>false</list_link>
+        <list_save_with_form_button>false</list_save_with_form_button>
+        <list_style>primary</list_style>
+        <messages/>
+        <name>Run assessment</name>
+        <onclick/>
+        <order>100</order>
+        <script><![CDATA[/**
+ * UI action "Run assessment" - list banner button on Assessment Run.
+ *
+ * Inserts a queued run against the active connection. The async business
+ * rule "Start queued assessment run" picks it up and executes the engine,
+ * so this action returns immediately.
+ */
+var connection = new GlideRecord('x_cmdbgov_app_connection')
+connection.addQuery('active', true)
+connection.orderBy('name')
+connection.setLimit(1)
+connection.query()
+
+if (!connection.next()) {
+    gs.addErrorMessage(
+        gs.getMessage('No active Governance Connection exists. Create one before running an assessment.')
+    )
+    action.setRedirectURL(current)
+} else {
+    var run = new GlideRecord('x_cmdbgov_app_run')
+    run.initialize()
+    run.setValue('connection', connection.getUniqueValue())
+    run.setValue('state', 'queued')
+    var runSysId = run.insert()
+
+    if (runSysId) {
+        gs.addInfoMessage(
+            gs.getMessage('Assessment queued against "{0}". Refresh this list to watch it progress.', [
+                connection.getValue('name'),
+            ])
+        )
+        var target = new GlideRecord('x_cmdbgov_app_run')
+        if (target.get(runSysId)) {
+            action.setRedirectURL(target)
+        } else {
+            action.setRedirectURL(current)
+        }
+    } else {
+        gs.addErrorMessage(gs.getMessage('Could not queue the assessment run.'))
+        action.setRedirectURL(current)
+    }
+}
+]]></script>
+        <show_form_icon_only>false</show_form_icon_only>
+        <show_insert>true</show_insert>
+        <show_list_icon_only>false</show_list_icon_only>
+        <show_multiple_update>false</show_multiple_update>
+        <show_query>false</show_query>
+        <show_update>true</show_update>
+        <sys_class_name>sys_ui_action</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 11:27:03</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_domain_path>/</sys_domain_path>
+        <sys_id>64506dd6496b414bafa4a5f4476777b3</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Run assessment</sys_name>
+        <sys_overrides/>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_ui_action_64506dd6496b414bafa4a5f4476777b3</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 11:27:03</sys_updated_on>
+        <table>x_cmdbgov_app_run</table>
+        <ui11_compatible>false</ui11_compatible>
+        <ui16_compatible>false</ui16_compatible>
+    </sys_ui_action>
+</record_update>

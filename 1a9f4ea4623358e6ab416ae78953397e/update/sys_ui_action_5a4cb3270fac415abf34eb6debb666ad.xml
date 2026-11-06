@@ -33,11 +33,11 @@
         <script><![CDATA[/**
  * UI action "Test connection" on x_cmdbgov_app_connection.
  *
- * Runs CMDBGovReader.test() - a single read-only count of cmdb_ci - and
+ * Runs CMDBGovDataSource.test() - a single read-only count of cmdb_ci - and
  * records the outcome. The only record written is the connection record the
  * button was pressed on, which belongs to this application.
  */
-var result = new CMDBGovReader(current).test()
+var result = new CMDBGovDataSource(current).test()
 var summary
 
 if (result.ok) {

@@ -2,15 +2,15 @@
     <sys_script_include action="INSERT_OR_UPDATE">
         <access>package_private</access>
         <active>true</active>
-        <api_name>x_cmdbgov_app.CMDBGovReader</api_name>
+        <api_name>x_cmdbgov_app.CMDBGovDataSource</api_name>
         <caller_access/>
         <client_callable>false</client_callable>
         <description>Read-only CMDB data access for the governance assessment. Supports local mode (GlideRecord/GlideAggregate) and remote mode (REST Table and Aggregate APIs over GET only, authenticated with a Basic or OAuth 2.0 profile). Exposes describe, instanceUrl, tableExists, fieldExists, count, groupCount, list and test.</description>
         <mobile_callable>false</mobile_callable>
-        <name>CMDBGovReader</name>
+        <name>CMDBGovDataSource</name>
         <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[/**
- * CMDBGovReader
+ * CMDBGovDataSource
  *
  * Single read-only access layer for every CMDB query the governance
  * assessment performs. Two modes, identical results:
@@ -26,12 +26,12 @@
  * Usage:
  *   var gr = new GlideRecord('x_cmdbgov_app_connection');
  *   gr.get(connectionSysId);
- *   var ds = new CMDBGovReader(gr);
+ *   var ds = new CMDBGovDataSource(gr);
  *   ds.count('cmdb_ci', 'install_status!=7');
  */
-var CMDBGovReader = Class.create()
+var CMDBGovDataSource = Class.create()
 
-CMDBGovReader.prototype = {
+CMDBGovDataSource.prototype = {
     REST_TIMEOUT_MS: 120000,
     ERROR_BODY_CHARS: 300,
 
@@ -499,7 +499,7 @@ CMDBGovReader.prototype = {
 
         if (status < 200 || status > 299) {
             throw new Error(
-                'CMDBGovReader: GET ' +
+                'CMDBGovDataSource: GET ' +
                     path +
                     ' on "' +
                     this._connectionName +
@@ -514,7 +514,7 @@ CMDBGovReader.prototype = {
             return JSON.parse(bodyText)
         } catch (e) {
             throw new Error(
-                'CMDBGovReader: GET ' +
+                'CMDBGovDataSource: GET ' +
                     path +
                     ' on "' +
                     this._connectionName +
@@ -575,7 +575,7 @@ CMDBGovReader.prototype = {
         return isNaN(parsed) ? 0 : parsed
     },
 
-    type: 'CMDBGovReader',
+    type: 'CMDBGovDataSource',
 }
 ]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
@@ -583,7 +583,7 @@ CMDBGovReader.prototype = {
         <sys_created_on>2026-11-06 05:34:49</sys_created_on>
         <sys_id>712532c40ed34e00b0eefa7561416eb9</sys_id>
         <sys_mod_count>0</sys_mod_count>
-        <sys_name>CMDBGovReader</sys_name>
+        <sys_name>CMDBGovDataSource</sys_name>
         <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
         <sys_policy/>
         <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
