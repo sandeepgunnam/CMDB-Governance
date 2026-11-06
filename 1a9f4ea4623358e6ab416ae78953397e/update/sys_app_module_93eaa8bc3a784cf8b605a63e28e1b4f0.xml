@@ -16,7 +16,7 @@
         <name/>
         <order>100</order>
         <override_menu_roles>false</override_menu_roles>
-        <query>x_cmdbgov_app_dashboard.do</query>
+        <query>x_cmdbgov_app_dash.do</query>
         <report/>
         <require_confirmation>true</require_confirmation>
         <roles>x_cmdbgov_app.viewer</roles>

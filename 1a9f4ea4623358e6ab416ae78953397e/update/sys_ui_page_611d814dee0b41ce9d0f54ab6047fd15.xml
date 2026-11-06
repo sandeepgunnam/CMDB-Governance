@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_page">
+    <sys_ui_page action="INSERT_OR_UPDATE">
+        <category>general</category>
+        <client_script/>
+        <description>Server-rendered CMDB governance dashboard for the latest completed assessment run. Simple Jelly page backed by the CMDBGovDashboard script include.</description>
+        <direct>false</direct>
+        <endpoint>x_cmdbgov_app_dash.do</endpoint>
+        <html><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
+  <!--
+    CMDB Governance dashboard - classic server-rendered UI page.
+
+    This file is deliberately tiny. It does two things:
+      1. carries the stylesheet
+      2. calls CMDBGovDashboard.render() once and prints the HTML
+
+    All data loading, scoring and markup lives in the CMDBGovDashboard script
+    include, so the page can be debugged without a browser:
+        gs.info(new CMDBGovDashboard().render('overview'));
+
+    Phase two (g2:evaluate plus the dollar-square output) is used because the
+    dashboard is request dependent. Phase one output is cached and would serve
+    stale scores.
+
+    There is intentionally no inline script element anywhere in this file.
+  -->
+  <style type="text/css">.gov {
+      font-family: "Lato", Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      color: #10171a;
+      background-color: #ffffff;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .gov h1, .gov h2, .gov h3, .gov p, .gov ul {
+      margin: 0;
+      padding: 0;
+    }
+    .gov-h1 { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+    .gov-h2 { font-size: 17px; font-weight: 600; margin-top: 26px; margin-bottom: 8px; }
+
+    /* Score bands. Tint, edge and ink are always paired with a text label. */
+    .gov-good { --gov-edge: #2e7d32; --gov-tint: #e8f5e2; --gov-ink: #123b10; }
+    .gov-warn { --gov-edge: #a1660b; --gov-tint: #fdf3d7; --gov-ink: #3f2d06; }
+    .gov-bad  { --gov-edge: #b3261e; --gov-tint: #fde4e6; --gov-ink: #41100d; }
+    .gov-none { --gov-edge: #8b9499; --gov-tint: #f1f3f4; --gov-ink: #3c4448; }
+
+    .gov-chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--gov-edge, #8b9499);
+      background-color: var(--gov-tint, #f1f3f4);
+      color: var(--gov-ink, #3c4448);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Header */
+    .gov-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px;
+      border: 1px solid #cfd5d7;
+      border-radius: 8px;
+      background-color: #fafbfb;
+    }
+    .gov-head-score {
+      flex: 0 0 auto;
+      min-width: 150px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border-left: 5px solid var(--gov-edge, #8b9499);
+      background-color: var(--gov-tint, #f1f3f4);
+    }
+    .gov-head-score-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #4b5559;
+    }
+    .gov-score-big {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--gov-ink, #10171a);
+    }
+    .gov-facts { border-collapse: collapse; flex: 1 1 260px; }
+    .gov-facts th, .gov-facts td {
+      text-align: left;
+      vertical-align: top;
+      padding: 3px 14px 3px 0;
+      font-size: 13px;
+    }
+    .gov-facts th { color: #4b5559; font-weight: 400; white-space: nowrap; }
+    .gov-facts td { font-weight: 600; }
+    .gov-head-action { flex: 0 0 auto; }
+
+    .gov-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      background-color: #00718f;
+      border: 1px solid #005b73;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .gov-btn:hover { background-color: #004c61; }
+    .gov-btn:focus { outline: 2px solid #0b7285; outline-offset: 2px; }
+
+    /* Tabs: plain links, no client state */
+    .gov-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      list-style: none;
+      gap: 2px;
+      margin-top: 22px;
+      border-bottom: 1px solid #cfd5d7;
+    }
+    .gov-tab {
+      display: block;
+      padding: 9px 15px;
+      font-size: 14px;
+      color: #10171a;
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+    }
+    .gov-tab:hover { background-color: #f1f3f4; }
+    .gov-tab:focus { outline: 2px solid #0b7285; outline-offset: -2px; }
+    .gov-tab-on { font-weight: 700; border-bottom-color: #00718f; }
+
+    /* Pillar cards */
+    .gov-cards {
+      display: flex;
+      flex-wrap: wrap;
+      list-style: none;
+      gap: 12px;
+    }
+    .gov-cards li { flex: 1 1 180px; display: flex; }
+    .gov-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      padding: 14px;
+      text-decoration: none;
+      color: #10171a;
+      border: 1px solid #cfd5d7;
+      border-left: 5px solid var(--gov-edge, #8b9499);
+      border-radius: 8px;
+      background-color: #ffffff;
+    }
+    .gov-card:hover { background-color: #f6f7f8; }
+    .gov-card:focus { outline: 2px solid #0b7285; outline-offset: 2px; }
+    .gov-card-label { font-size: 13px; font-weight: 600; color: #4b5559; }
+    .gov-card-score { font-size: 28px; font-weight: 700; }
+
+    /* Tables - each in its own scroll region so narrow screens scroll */
+    .gov-scroll {
+      overflow-x: auto;
+      border: 1px solid #cfd5d7;
+      border-radius: 6px;
+      background-color: #ffffff;
+      margin-bottom: 10px;
+    }
+    .gov-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+    .gov-table caption {
+      caption-side: top;
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #4b5559;
+    }
+    .gov-table th, .gov-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 9px 12px;
+      border-bottom: 1px solid #e3e6e8;
+    }
+    .gov-table thead th {
+      background-color: #f1f3f4;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .gov-table-tight th, .gov-table-tight td { padding: 6px 10px; }
+    .gov-num { text-align: right; white-space: nowrap; }
+    .gov-table td.gov-good, .gov-table td.gov-warn,
+    .gov-table td.gov-bad, .gov-table td.gov-none {
+      background-color: var(--gov-tint, #f1f3f4);
+      color: var(--gov-ink, #10171a);
+      border-left: 4px solid var(--gov-edge, #8b9499);
+    }
+    .gov-mono { font-family: "Courier New", monospace; font-size: 13px; }
+    .gov-sub { display: block; font-size: 11px; color: #4b5559; font-weight: 400; }
+    .gov-link { color: #00718f; text-decoration: underline; }
+    .gov-link:focus { outline: 2px solid #0b7285; outline-offset: 2px; }
+
+    /* Trend chart */
+    .gov-svg { display: block; width: 100%; min-width: 520px; height: auto; }
+    .gov-legend {
+      display: flex;
+      flex-wrap: wrap;
+      list-style: none;
+      gap: 6px 18px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .gov-legend li { display: flex; align-items: center; gap: 6px; }
+    .gov-key { display: inline-block; width: 22px; height: 0; }
+    .gov-details { margin-top: 10px; font-size: 13px; }
+    .gov-details summary { cursor: pointer; padding: 4px 0; color: #00718f; }
+
+    /* Pillar panel, metric tiles, check blocks */
+    .gov-panel {
+      padding: 16px;
+      border: 1px solid #cfd5d7;
+      border-left: 5px solid var(--gov-edge, #8b9499);
+      border-radius: 8px;
+      background-color: var(--gov-tint, #f1f3f4);
+      margin-top: 14px;
+    }
+    .gov-desc { font-size: 13px; margin-top: 6px; max-width: 70ch; }
+
+    .gov-tiles { display: flex; flex-wrap: wrap; list-style: none; gap: 12px; }
+    .gov-tile {
+      flex: 1 1 210px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 13px;
+      border: 1px solid #cfd5d7;
+      border-radius: 8px;
+      background-color: #ffffff;
+    }
+    .gov-tile-name { font-size: 13px; font-weight: 600; }
+    .gov-tile-value { font-size: 24px; font-weight: 700; }
+    .gov-tile-na { font-size: 15px; font-weight: 600; color: #4b5559; }
+
+    .gov-check {
+      padding: 14px;
+      border: 1px solid #cfd5d7;
+      border-radius: 8px;
+      background-color: #ffffff;
+      margin-bottom: 12px;
+    }
+    .gov-check-name { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+    .gov-problems {
+      list-style: none;
+      font-size: 12px;
+      color: #3c4448;
+      background-color: #f1f3f4;
+      border: 1px solid #dfe3e5;
+      border-radius: 6px;
+      padding: 9px 12px;
+      margin-bottom: 8px;
+    }
+    .gov-problems li { padding: 2px 0; }
+    .gov-rec {
+      font-size: 13px;
+      padding: 9px 12px;
+      background-color: #eef6f8;
+      border-left: 4px solid #00718f;
+      border-radius: 4px;
+    }
+
+    /* Dimming uses a darker grey on a light panel, never low opacity, so
+       contrast stays readable. */
+    .gov-dim { color: #3c4448; background-color: #f1f3f4; }
+
+    .gov-notice {
+      padding: 11px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .gov-notice-ok { background-color: #e8f5e2; border: 1px solid #2e7d32; color: #123b10; }
+    .gov-notice-warn { background-color: #fdf3d7; border: 1px solid #a1660b; color: #3f2d06; }
+    .gov-empty {
+      padding: 14px;
+      border: 1px dashed #cfd5d7;
+      border-radius: 6px;
+      color: #4b5559;
+      background-color: #fafbfb;
+      font-size: 13px;
+    }
+
+    @media (max-width: 720px) {
+      .gov { padding: 10px; }
+      .gov-score-big { font-size: 32px; }
+      .gov-head { padding: 12px; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .gov { color: #e7eaec; background-color: #161d21; }
+      .gov-head, .gov-empty { background-color: #1d262b; border-color: #3b464c; }
+      .gov-card, .gov-tile, .gov-check, .gov-scroll {
+        background-color: #1d262b;
+        border-color: #3b464c;
+      }
+      .gov-table thead th { background-color: #263036; }
+      .gov-table th, .gov-table td { border-bottom-color: #313c42; }
+      .gov-tabs { border-bottom-color: #3b464c; }
+      .gov-tab { color: #e7eaec; }
+      .gov-tab:hover { background-color: #263036; }
+      .gov-card { color: #e7eaec; }
+      .gov-card:hover { background-color: #263036; }
+      .gov-facts th, .gov-sub, .gov-card-label, .gov-head-score-label { color: #aab3b8; }
+      .gov-good { --gov-tint: #1b2e1b; --gov-ink: #cfe8c6; }
+      .gov-warn { --gov-tint: #332a12; --gov-ink: #f0dca6; }
+      .gov-bad  { --gov-tint: #351619; --gov-ink: #f5c2c6; }
+      .gov-none { --gov-tint: #262f33; --gov-ink: #c3cbcf; }
+      .gov-problems, .gov-dim { background-color: #263036; border-color: #3b464c; color: #c3cbcf; }
+      .gov-rec { background-color: #16303a; }
+      .gov-notice-ok { background-color: #1b2e1b; color: #cfe8c6; }
+      .gov-notice-warn { background-color: #332a12; color: #f0dca6; }
+      .gov-link, .gov-details summary { color: #6fc5dd; }
+    }</style>
+  <g2:evaluate var="jvar_gov_html" jelly="true">var govTab = 'overview';
+    var govQueued = false;
+    try {
+      var requestedTab = RP.getParameterValue('tab');
+      if (requestedTab) {
+        govTab = '' + requestedTab;
+      }
+      var requestedQueued = RP.getParameterValue('queued');
+      if (requestedQueued) {
+        govQueued = ('' + requestedQueued) === '1';
+      }
+    } catch (govError) {
+      govTab = 'overview';
+    }
+    new CMDBGovDashboard().render(govTab, govQueued);</g2:evaluate>
+  <g2:no_escape>$[jvar_gov_html]</g2:no_escape>
+</j:jelly>]]></html>
+        <name>dash</name>
+        <processing_script><![CDATA[/**
+ * Processing script for x_cmdbgov_app_dash.do.
+ *
+ * Runs server-side only when the page is submitted (POST). Its single job is
+ * to queue an assessment run for an administrator; the async business rule on
+ * x_cmdbgov_app_run then executes it.
+ *
+ * The role is re-checked here, never trusted from the form: hiding the button
+ * is only cosmetic, this check plus the create ACL is the real control.
+ *
+ * This is the one and only write reachable from the dashboard.
+ */
+;(function () {
+    var action = '' + (request.getParameter('gov_action') || '')
+
+    if (action !== 'queue_run') {
+        response.sendRedirect('x_cmdbgov_app_dash.do')
+        return
+    }
+
+    if (!gs.hasRole('x_cmdbgov_app.admin')) {
+        gs.addErrorMessage(gs.getMessage('You need the CMDB Governance admin role to queue an assessment.'))
+        response.sendRedirect('x_cmdbgov_app_dash.do')
+        return
+    }
+
+    try {
+        var run = new GlideRecord('x_cmdbgov_app_run')
+        run.initialize()
+        run.setValue('state', 'queued')
+        var sysId = run.insert()
+
+        if (sysId) {
+            response.sendRedirect('x_cmdbgov_app_dash.do?queued=1')
+            return
+        }
+        gs.addErrorMessage(gs.getMessage('The assessment run could not be queued.'))
+    } catch (e) {
+        gs.error('CMDB Governance dashboard could not queue a run: ' + (e.message || e))
+        gs.addErrorMessage(gs.getMessage('The assessment run could not be queued.'))
+    }
+
+    response.sendRedirect('x_cmdbgov_app_dash.do')
+})()
+]]></processing_script>
+        <sys_class_name>sys_ui_page</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 17:30:34</sys_created_on>
+        <sys_id>611d814dee0b41ce9d0f54ab6047fd15</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>dash</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_ui_page_611d814dee0b41ce9d0f54ab6047fd15</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 17:30:34</sys_updated_on>
+    </sys_ui_page>
+</record_update>

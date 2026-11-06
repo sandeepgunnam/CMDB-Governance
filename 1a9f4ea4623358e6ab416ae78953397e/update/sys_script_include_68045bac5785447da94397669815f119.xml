@@ -1,0 +1,1159 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_cmdbgov_app.CMDBGovDashboard</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description>Builds the CMDB governance dashboard as a server-rendered HTML string for the x_cmdbgov_app_dash.do UI page. render(tab, queued) loads the latest completed run, joins its result rows to their check definitions, and returns the finished markup. Read-only.</description>
+        <mobile_callable>false</mobile_callable>
+        <name>CMDBGovDashboard</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[/**
+ * CMDBGovDashboard
+ *
+ * Renders the CMDB governance dashboard as a plain HTML string, entirely
+ * server-side. The Jelly UI page (x_cmdbgov_app_dash.do) is only a shell:
+ * it calls render() once and prints the result.
+ *
+ * WHY THIS SHAPE
+ *   Everything -- loading, joining, scoring, formatting and markup -- lives in
+ *   this one file, so the whole dashboard can be debugged from a background
+ *   script without a browser:
+ *
+ *       gs.info(new CMDBGovDashboard().render('overview'));
+ *
+ * READ/WRITE CONTRACT
+ *   Reads only this application's own tables (_run, _result, _check). It never
+ *   touches any cmdb_* table: drill-down reuses the list_url the engine already
+ *   resolved and stored. This class performs no writes at all.
+ *
+ * ROW SHAPES (the engine writes five different shapes into _result)
+ *   scored      - status ok, pass_rate set, no field_name, no group_value.
+ *                 One per check+class; the only rows that fed the score.
+ *   detail      - field_name set (one required field); pass_rate empty.
+ *   rollup      - completeness check, no field_name; `failing` is the SUM of
+ *                 empty values across all fields, so it CAN exceed population.
+ *                 Labelled "N empty values across F fields", never "N CIs".
+ *   duplicate   - group_value set; `failing` is that group's member count.
+ *   metric      - check_type metric; ci_class holds the metric TABLE name.
+ */
+var CMDBGovDashboard = Class.create()
+
+CMDBGovDashboard.prototype = {
+    PAGE: 'x_cmdbgov_app_dash.do',
+
+    /** Display order of the pillar tabs. */
+    PILLARS: [
+        {
+            id: 'ownership',
+            label: 'Ownership',
+            field: 'ownership_score',
+            description:
+                'Whether every governed CI has an accountable owner, a support group and a managing group, so problems can always be routed to a responsible party.',
+        },
+        {
+            id: 'quality',
+            label: 'Data Quality',
+            field: 'quality_score',
+            description:
+                'Whether governed CI records are complete, fresh and free of duplicates, so the CMDB can be trusted as a system of record.',
+        },
+        {
+            id: 'relationships',
+            label: 'Relationships',
+            field: 'relationships_score',
+            description:
+                'Whether governed CIs are connected to the services and infrastructure they depend on, so impact and dependency analysis returns meaningful results.',
+        },
+        {
+            id: 'lifecycle',
+            label: 'Lifecycle & Certification',
+            field: 'lifecycle_score',
+            description:
+                'Whether CI lifecycle status is accurate and consistent, and whether certification and attestation work is being tracked.',
+        },
+    ],
+
+    initialize: function () {},
+
+    /* ============================================================== *
+     * Public entry point
+     * ============================================================== */
+
+    /**
+     * @param {string} tab     'overview' or a pillar id
+     * @param {boolean} queued true to show the "assessment queued" notice
+     * @return {string} the dashboard HTML
+     */
+    render: function (tab, queued) {
+        var run = this._loadRun()
+        var out = []
+
+        out.push('<div class="gov">')
+        out.push('<h1 class="gov-h1">CMDB Governance</h1>')
+
+        if (queued) {
+            out.push(
+                this._notice(
+                    'ok',
+                    'Assessment queued. It normally finishes within a few seconds -- reload this page to see the new scores.'
+                )
+            )
+        }
+
+        if (!run) {
+            out.push(
+                this._notice(
+                    'warn',
+                    'No completed assessment run yet. Queue one from Assessment Runs, or use the button below if you are an administrator.'
+                )
+            )
+            out.push(this._runButton())
+            out.push('</div>')
+            return out.join('\n')
+        }
+
+        var active = this._activeTab(tab)
+        var checks = this._loadChecks()
+        var rows = this._loadRows(run.sysId, checks)
+
+        out.push(this._header(run))
+        if (run.warnings) {
+            out.push(this._notice('warn', 'Run warnings: ' + run.warnings))
+        }
+        out.push(this._tabs(active))
+
+        if (active === 'overview') {
+            out.push(this._overview(run, rows))
+        } else {
+            out.push(this._pillar(this._pillarById(active), run, rows))
+        }
+
+        out.push('</div>')
+        return out.join('\n')
+    },
+
+    /* ============================================================== *
+     * Data loading - three queries, then an in-memory join
+     * ============================================================== */
+
+    /** Latest run with state=complete, or null. */
+    _loadRun: function () {
+        var gr = new GlideRecord('x_cmdbgov_app_run')
+        gr.addQuery('state', 'complete')
+        gr.orderByDesc('completed')
+        gr.setLimit(1)
+        gr.query()
+        if (!gr.next()) {
+            return null
+        }
+
+        var mode = ''
+        if (!gr.getValue('connection')) {
+            mode = ''
+        } else {
+            var conn = new GlideRecord('x_cmdbgov_app_connection')
+            if (conn.get(gr.getValue('connection'))) {
+                mode = conn.getDisplayValue('mode')
+            }
+        }
+
+        var run = {
+            sysId: gr.getUniqueValue(),
+            number: gr.getValue('number') || '',
+            completed: gr.getDisplayValue('completed') || '',
+            totalCis: this._int(gr.getValue('total_cis')),
+            classes: this._int(gr.getValue('governed_classes')),
+            warnings: (gr.getValue('warnings') || '').replace(/\n/g, ' '),
+            overall: this._num(gr.getValue('overall_score')),
+            mode: mode,
+            scores: {},
+        }
+        for (var i = 0; i < this.PILLARS.length; i++) {
+            run.scores[this.PILLARS[i].id] = this._num(gr.getValue(this.PILLARS[i].field))
+        }
+        return run
+    },
+
+    /** All check definitions, keyed by sys_id. */
+    _loadChecks: function () {
+        var byId = {}
+        var gr = new GlideRecord('x_cmdbgov_app_check')
+        gr.query()
+        while (gr.next()) {
+            byId[gr.getUniqueValue()] = {
+                sysId: gr.getUniqueValue(),
+                name: gr.getValue('name') || gr.getValue('code') || 'Unnamed check',
+                pillar: gr.getValue('pillar') || '',
+                checkType: gr.getValue('check_type') || '',
+                severity: gr.getDisplayValue('severity') || 'Unrated',
+                weight: this._int(gr.getValue('weight')),
+                scored: gr.getValue('scored') === '1' || gr.getValue('scored') === 'true',
+                description: gr.getValue('description') || '',
+                recommendation: gr.getValue('recommendation') || '',
+                order: this._int(gr.getValue('order')),
+            }
+        }
+        return byId
+    },
+
+    /** Result rows for the run, each with its check definition attached. */
+    _loadRows: function (runSysId, checks) {
+        var rows = []
+        var gr = new GlideRecord('x_cmdbgov_app_result')
+        gr.addQuery('run', runSysId)
+        gr.query()
+        while (gr.next()) {
+            var checkId = gr.getValue('check') || ''
+            rows.push({
+                pillar: gr.getValue('pillar') || '',
+                ciClass: gr.getValue('ci_class') || '',
+                fieldName: (gr.getValue('field_name') || '').trim(),
+                groupValue: (gr.getValue('group_value') || '').trim(),
+                population: this._int(gr.getValue('population')),
+                failing: this._int(gr.getValue('failing')),
+                passRate: this._num(gr.getValue('pass_rate')),
+                metricValue: this._num(gr.getValue('metric_value')),
+                status: gr.getValue('status') || 'ok',
+                errorMessage: gr.getValue('error_message') || '',
+                listUrl: (gr.getValue('list_url') || '').trim(),
+                checkId: checkId,
+                check: checks[checkId] || null,
+            })
+        }
+        return rows
+    },
+
+    /** Last 30 completed runs, oldest first, for the trend chart. */
+    _loadTrend: function () {
+        var runs = []
+        var gr = new GlideRecord('x_cmdbgov_app_run')
+        gr.addQuery('state', 'complete')
+        gr.orderByDesc('completed')
+        gr.setLimit(30)
+        gr.query()
+        while (gr.next()) {
+            var entry = {
+                number: gr.getValue('number') || '',
+                completed: gr.getDisplayValue('completed') || '',
+                overall: this._num(gr.getValue('overall_score')),
+                scores: {},
+            }
+            for (var i = 0; i < this.PILLARS.length; i++) {
+                entry.scores[this.PILLARS[i].id] = this._num(gr.getValue(this.PILLARS[i].field))
+            }
+            runs.push(entry)
+        }
+        return runs.reverse()
+    },
+
+    /* ============================================================== *
+     * Row classifiers - mirror the engine's own row shapes
+     * ============================================================== */
+
+    _isScored: function (row) {
+        return row.status === 'ok' && row.passRate !== null && row.fieldName === '' && row.groupValue === ''
+    },
+
+    _isDetail: function (row) {
+        return row.fieldName !== ''
+    },
+
+    _isDuplicate: function (row) {
+        return row.groupValue !== ''
+    },
+
+    _isMetric: function (row) {
+        if (row.check && row.check.checkType) {
+            return row.check.checkType === 'metric'
+        }
+        return row.metricValue !== null
+    },
+
+    _isProblem: function (row) {
+        return row.status === 'not_applicable' || row.status === 'error'
+    },
+
+    _isRollup: function (row) {
+        return !!row.check && row.check.checkType === 'completeness' && row.fieldName === '' && row.groupValue === ''
+    },
+
+    /* ============================================================== *
+     * Header and navigation
+     * ============================================================== */
+
+    _header: function (run) {
+        var band = this._band(run.overall)
+        var out = []
+        out.push('<div class="gov-head">')
+
+        out.push('<div class="gov-head-score ' + band.cls + '">')
+        out.push('<div class="gov-head-score-label">Overall score</div>')
+        out.push('<div class="gov-score-big">' + this._score(run.overall) + '</div>')
+        out.push('<div class="gov-chip ' + band.cls + '">' + this._esc(band.label) + '</div>')
+        out.push('</div>')
+
+        out.push('<table class="gov-facts"><tbody>')
+        out.push(this._fact('Run', run.number))
+        out.push(this._fact('Completed', run.completed))
+        out.push(this._fact('Connection', run.mode || 'Unknown'))
+        out.push(this._fact('Total CIs', this._int(run.totalCis).toString()))
+        out.push(this._fact('Governed classes', this._int(run.classes).toString()))
+        out.push('</tbody></table>')
+
+        out.push('<div class="gov-head-action">' + this._runButton() + '</div>')
+        out.push('</div>')
+        return out.join('\n')
+    },
+
+    _fact: function (label, value) {
+        return (
+            '<tr><th scope="row">' +
+            this._esc(label) +
+            '</th><td>' +
+            this._esc(value || '--') +
+            '</td></tr>'
+        )
+    },
+
+    /**
+     * Admin-only form that queues a run. Rendered as a POST so a page load can
+     * never create a record; the processing script re-checks the role.
+     */
+    _runButton: function () {
+        if (!gs.hasRole('x_cmdbgov_app.admin')) {
+            return ''
+        }
+        var token = ''
+        try {
+            token = gs.getSessionToken()
+        } catch (e) {
+            token = ''
+        }
+        return (
+            '<form method="post" action="' +
+            this._esc(this.PAGE) +
+            '">' +
+            '<input type="hidden" name="sysparm_ck" value="' +
+            this._esc(token) +
+            '"/>' +
+            '<input type="hidden" name="gov_action" value="queue_run"/>' +
+            '<button type="submit" class="gov-btn">Run assessment</button>' +
+            '</form>'
+        )
+    },
+
+    _activeTab: function (tab) {
+        var requested = (tab || 'overview') + ''
+        if (requested === 'overview') {
+            return 'overview'
+        }
+        return this._pillarById(requested) ? requested : 'overview'
+    },
+
+    _tabs: function (active) {
+        var out = ['<ul class="gov-tabs">']
+        out.push(this._tab('overview', 'Overview', active))
+        for (var i = 0; i < this.PILLARS.length; i++) {
+            out.push(this._tab(this.PILLARS[i].id, this.PILLARS[i].label, active))
+        }
+        out.push('</ul>')
+        return out.join('')
+    },
+
+    /** Plain links, so there is no client-side tab state to debug. */
+    _tab: function (id, label, active) {
+        var current = id === active
+        return (
+            '<li><a class="gov-tab' +
+            (current ? ' gov-tab-on' : '') +
+            '" href="' +
+            this._esc(this.PAGE + '?tab=' + id) +
+            '"' +
+            (current ? ' aria-current="page"' : '') +
+            '>' +
+            this._esc(label) +
+            '</a></li>'
+        )
+    },
+
+    /* ============================================================== *
+     * Overview tab
+     * ============================================================== */
+
+    _overview: function (run, rows) {
+        var out = []
+
+        out.push('<h2 class="gov-h2">Pillar scores</h2>')
+        out.push('<ul class="gov-cards">')
+        for (var i = 0; i < this.PILLARS.length; i++) {
+            var pillar = this.PILLARS[i]
+            var band = this._band(run.scores[pillar.id])
+            out.push('<li>')
+            out.push('<a class="gov-card ' + band.cls + '" href="' + this._esc(this.PAGE + '?tab=' + pillar.id) + '">')
+            out.push('<span class="gov-card-label">' + this._esc(pillar.label) + '</span>')
+            out.push('<span class="gov-card-score">' + this._score(run.scores[pillar.id]) + '</span>')
+            out.push('<span class="gov-chip ' + band.cls + '">' + this._esc(band.label) + '</span>')
+            out.push('</a></li>')
+        }
+        out.push('</ul>')
+
+        out.push('<h2 class="gov-h2">Top issues</h2>')
+        out.push(this._topIssues(rows))
+
+        out.push('<h2 class="gov-h2">Score by class</h2>')
+        out.push(this._classMatrix(rows))
+
+        out.push('<h2 class="gov-h2">Score trend</h2>')
+        out.push(this._trend())
+
+        return out.join('\n')
+    },
+
+    /** Scored checks with real failures, ranked by failing x check weight. */
+    _topIssues: function (rows) {
+        var issues = []
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i]
+            if (!row.check || !row.check.scored) {
+                continue
+            }
+            if (row.status !== 'ok' || row.failing <= 0 || row.groupValue !== '') {
+                continue
+            }
+            var rate = row.passRate
+            var derived = false
+            if (rate === null && row.population > 0) {
+                rate = Math.round((100 * (1 - row.failing / row.population)) * 10) / 10
+                derived = true
+            }
+            issues.push({ row: row, impact: row.failing * row.check.weight, rate: rate, derived: derived })
+        }
+        if (!issues.length) {
+            return this._empty('No scored check reported a failure in this run.')
+        }
+        issues.sort(function (a, b) {
+            return b.impact - a.impact
+        })
+        issues = issues.slice(0, 10)
+
+        var out = ['<div class="gov-scroll"><table class="gov-table">']
+        out.push(
+            '<caption>The ten highest-impact failures, ranked by failing count multiplied by check weight. Duplicate groups are excluded. A pass rate marked "derived" was computed for display because the row is a per-field detail row.</caption>'
+        )
+        out.push(
+            '<thead><tr><th scope="col">Check</th><th scope="col">Pillar</th><th scope="col">Class</th>' +
+                '<th scope="col">Severity</th><th scope="col">Failing</th><th scope="col">Pass rate</th></tr></thead><tbody>'
+        )
+        for (var j = 0; j < issues.length; j++) {
+            var issue = issues[j]
+            var r = issue.row
+            out.push('<tr>')
+            out.push('<th scope="row">' + this._esc(r.check.name) + this._fieldSuffix(r) + '</th>')
+            out.push('<td>' + this._esc(this._pillarLabel(r.pillar)) + '</td>')
+            out.push('<td class="gov-mono">' + this._esc(r.ciClass) + '</td>')
+            out.push('<td>' + this._esc(r.check.severity) + '</td>')
+            out.push('<td class="gov-num">' + this._failing(r, rows) + '</td>')
+            out.push(
+                '<td class="gov-num">' +
+                    this._pct(issue.rate) +
+                    (issue.derived ? ' <span class="gov-sub">derived</span>' : '') +
+                    '</td>'
+            )
+            out.push('</tr>')
+        }
+        out.push('</tbody></table></div>')
+        return out.join('\n')
+    },
+
+    /**
+     * One row per class, one column per pillar. Each cell is the weighted mean
+     * of that class+pillar's scored rows, weighted by check weight -- the same
+     * weighting the engine applies.
+     */
+    _classMatrix: function (rows) {
+        var buckets = {}
+        var classes = []
+
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i]
+            if (!row.check || !row.check.scored || !this._isScored(row) || row.ciClass === '') {
+                continue
+            }
+            if (row.check.weight <= 0) {
+                continue
+            }
+            if (classes.indexOf(row.ciClass) === -1) {
+                classes.push(row.ciClass)
+            }
+            var key = row.ciClass + '|' + row.pillar
+            if (!buckets[key]) {
+                buckets[key] = { weighted: 0, weight: 0 }
+            }
+            buckets[key].weighted += row.passRate * row.check.weight
+            buckets[key].weight += row.check.weight
+        }
+
+        if (!classes.length) {
+            return this._empty('No scored rows in this run, so there is nothing to break down by class.')
+        }
+        classes.sort()
+
+        var out = ['<div class="gov-scroll"><table class="gov-table">']
+        out.push('<caption>Weighted mean pass rate per class and pillar. A dash means no scored check applied.</caption>')
+        out.push('<thead><tr><th scope="col">Class</th>')
+        for (var p = 0; p < this.PILLARS.length; p++) {
+            out.push('<th scope="col">' + this._esc(this.PILLARS[p].label) + '</th>')
+        }
+        out.push('</tr></thead><tbody>')
+
+        for (var c = 0; c < classes.length; c++) {
+            out.push('<tr><th scope="row" class="gov-mono">' + this._esc(classes[c]) + '</th>')
+            for (var q = 0; q < this.PILLARS.length; q++) {
+                var bucket = buckets[classes[c] + '|' + this.PILLARS[q].id]
+                if (!bucket || bucket.weight <= 0) {
+                    out.push('<td class="gov-num">--</td>')
+                    continue
+                }
+                var score = Math.round((bucket.weighted / bucket.weight) * 10) / 10
+                var band = this._band(score)
+                out.push(
+                    '<td class="gov-num ' +
+                        band.cls +
+                        '"><strong>' +
+                        this._score(score) +
+                        '</strong><span class="gov-sub">' +
+                        this._esc(band.label) +
+                        '</span></td>'
+                )
+            }
+            out.push('</tr>')
+        }
+        out.push('</tbody></table></div>')
+        return out.join('\n')
+    },
+
+    /* ============================================================== *
+     * Trend - inline SVG plus an equivalent table for screen readers
+     * ============================================================== */
+
+    _trend: function () {
+        var runs = this._loadTrend()
+        if (!runs.length) {
+            return this._empty('No completed runs to chart yet.')
+        }
+
+        var series = [{ id: 'overall', label: 'Overall', color: '#14495c', dash: 'none' }]
+        var palette = ['#0b7285', '#2e7d32', '#b3261e', '#8a6100']
+        for (var i = 0; i < this.PILLARS.length; i++) {
+            series.push({
+                id: this.PILLARS[i].id,
+                label: this.PILLARS[i].label,
+                color: palette[i % palette.length],
+                dash: ['6 4', '2 3', '10 4 2 4', '1 4'][i % 4],
+            })
+        }
+
+        var width = 760
+        var height = 240
+        var left = 40
+        var right = 14
+        var top = 14
+        var bottom = 30
+        var plotW = width - left - right
+        var plotH = height - top - bottom
+
+        var out = []
+        out.push('<div class="gov-scroll">')
+        out.push(
+            '<svg class="gov-svg" viewBox="0 0 ' +
+                width +
+                ' ' +
+                height +
+                '" role="img" aria-label="Score trend over the last ' +
+                runs.length +
+                ' completed runs. The table below gives the same figures." focusable="false">'
+        )
+
+        // Gridlines at 0, 25, 50, 75, 100.
+        for (var g = 0; g <= 100; g += 25) {
+            var y = top + ((100 - g) / 100) * plotH
+            out.push(
+                '<line x1="' + left + '" y1="' + y + '" x2="' + (left + plotW) + '" y2="' + y + '" stroke="#cfd5d7" stroke-width="1"/>'
+            )
+            out.push('<text x="' + (left - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="#4b5559">' + g + '</text>')
+        }
+
+        for (var s = 0; s < series.length; s++) {
+            out.push(this._svgSeries(runs, series[s], left, top, plotW, plotH))
+        }
+
+        if (runs.length > 0) {
+            out.push(
+                '<text x="' + left + '" y="' + (height - 8) + '" font-size="11" fill="#4b5559">' + this._esc(runs[0].completed) + '</text>'
+            )
+            if (runs.length > 1) {
+                out.push(
+                    '<text x="' +
+                        (left + plotW) +
+                        '" y="' +
+                        (height - 8) +
+                        '" text-anchor="end" font-size="11" fill="#4b5559">' +
+                        this._esc(runs[runs.length - 1].completed) +
+                        '</text>'
+                )
+            }
+        }
+        out.push('</svg>')
+        out.push('</div>')
+
+        // Legend: colour plus a label, never colour alone.
+        out.push('<ul class="gov-legend">')
+        for (var l = 0; l < series.length; l++) {
+            out.push(
+                '<li><span class="gov-key" style="border-top:3px solid ' +
+                    series[l].color +
+                    '"></span>' +
+                    this._esc(series[l].label) +
+                    '</li>'
+            )
+        }
+        out.push('</ul>')
+
+        if (runs.length === 1) {
+            out.push('<p class="gov-sub">Only one completed run exists, so the chart shows single points. Lines appear from the second run onward.</p>')
+        }
+
+        // Accessible equivalent of the chart.
+        out.push('<details class="gov-details"><summary>Trend data as a table</summary>')
+        out.push('<div class="gov-scroll"><table class="gov-table"><thead><tr><th scope="col">Run</th><th scope="col">Completed</th>')
+        for (var h = 0; h < series.length; h++) {
+            out.push('<th scope="col">' + this._esc(series[h].label) + '</th>')
+        }
+        out.push('</tr></thead><tbody>')
+        for (var t = 0; t < runs.length; t++) {
+            out.push('<tr><th scope="row">' + this._esc(runs[t].number) + '</th><td>' + this._esc(runs[t].completed) + '</td>')
+            for (var u = 0; u < series.length; u++) {
+                var val = series[u].id === 'overall' ? runs[t].overall : runs[t].scores[series[u].id]
+                out.push('<td class="gov-num">' + this._score(val) + '</td>')
+            }
+            out.push('</tr>')
+        }
+        out.push('</tbody></table></div></details>')
+
+        return out.join('\n')
+    },
+
+    /** One trend series: contiguous polylines plus a dot per data point. */
+    _svgSeries: function (runs, series, left, top, plotW, plotH) {
+        var out = []
+        var segment = []
+        var single = runs.length === 1
+
+        for (var i = 0; i < runs.length; i++) {
+            var score = series.id === 'overall' ? runs[i].overall : runs[i].scores[series.id]
+            if (score === null) {
+                // A gap breaks the line rather than interpolating a value.
+                if (segment.length > 1) {
+                    out.push(this._polyline(segment, series))
+                }
+                segment = []
+                continue
+            }
+            var x = single ? left + plotW / 2 : left + (i / (runs.length - 1)) * plotW
+            var y = top + ((100 - score) / 100) * plotH
+            segment.push(x + ',' + y)
+            out.push('<circle cx="' + x + '" cy="' + y + '" r="' + (single ? 5 : 3) + '" fill="' + series.color + '"/>')
+        }
+        if (segment.length > 1) {
+            out.push(this._polyline(segment, series))
+        }
+        return out.join('')
+    },
+
+    _polyline: function (points, series) {
+        return (
+            '<polyline points="' +
+            points.join(' ') +
+            '" fill="none" stroke="' +
+            series.color +
+            '" stroke-width="2"' +
+            (series.dash === 'none' ? '' : ' stroke-dasharray="' + series.dash + '"') +
+            '/>'
+        )
+    },
+
+    /* ============================================================== *
+     * Pillar tabs
+     * ============================================================== */
+
+    _pillar: function (pillar, run, allRows) {
+        var rows = []
+        for (var i = 0; i < allRows.length; i++) {
+            var owner = allRows[i].pillar || (allRows[i].check ? allRows[i].check.pillar : '')
+            if (owner === pillar.id) {
+                rows.push(allRows[i])
+            }
+        }
+
+        var band = this._band(run.scores[pillar.id])
+        var out = []
+
+        out.push('<div class="gov-panel ' + band.cls + '">')
+        out.push('<div class="gov-score-big">' + this._score(run.scores[pillar.id]) + '</div>')
+        out.push('<div class="gov-chip ' + band.cls + '">' + this._esc(band.label) + '</div>')
+        out.push('<p class="gov-desc">' + this._esc(pillar.description) + '</p>')
+        out.push('</div>')
+
+        out.push('<h2 class="gov-h2">Metrics</h2>')
+        out.push(this._metrics(rows))
+
+        out.push('<h2 class="gov-h2">Scored checks</h2>')
+        out.push(this._checks(rows, allRows))
+
+        if (pillar.id === 'quality') {
+            out.push('<h2 class="gov-h2">Completeness by class and field</h2>')
+            out.push(this._fieldMatrix(rows))
+            out.push('<h2 class="gov-h2">Largest duplicate groups</h2>')
+            out.push(this._duplicates(rows))
+        }
+
+        return out.join('\n')
+    },
+
+    /** Metric tiles. Unavailable metrics are dimmed and show the reason. */
+    _metrics: function (rows) {
+        var metrics = []
+        for (var i = 0; i < rows.length; i++) {
+            if (this._isMetric(rows[i])) {
+                metrics.push(rows[i])
+            }
+        }
+        if (!metrics.length) {
+            return this._empty('This pillar has no metric checks.')
+        }
+        metrics.sort(function (a, b) {
+            var an = a.check ? a.check.name : a.ciClass
+            var bn = b.check ? b.check.name : b.ciClass
+            return an < bn ? -1 : an > bn ? 1 : 0
+        })
+
+        var out = ['<ul class="gov-tiles">']
+        for (var j = 0; j < metrics.length; j++) {
+            var row = metrics[j]
+            var name = row.check ? row.check.name : row.ciClass
+            var problem = this._isProblem(row)
+            out.push('<li class="gov-tile' + (problem ? ' gov-dim' : '') + '">')
+            out.push('<span class="gov-tile-name">' + this._esc(name) + '</span>')
+            if (problem) {
+                out.push('<span class="gov-tile-na">Not available</span>')
+                out.push('<span class="gov-sub">' + this._esc(row.errorMessage || 'No reason recorded.') + '</span>')
+            } else {
+                out.push('<span class="gov-tile-value">' + this._int(row.metricValue).toString() + '</span>')
+                if (row.check && row.check.description) {
+                    out.push('<span class="gov-sub">' + this._esc(row.check.description) + '</span>')
+                }
+            }
+            out.push('<span class="gov-sub gov-mono">' + this._esc(row.ciClass) + '</span>')
+            out.push('</li>')
+        }
+        out.push('</ul>')
+        return out.join('\n')
+    },
+
+    /** One block per scored check: pass rate, per-class failures, advice. */
+    _checks: function (rows, allRows) {
+        var byCheck = {}
+        var order = []
+
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i]
+            if (this._isMetric(row) || !row.check || !row.check.scored) {
+                continue
+            }
+            if (this._isDetail(row) || this._isDuplicate(row)) {
+                continue
+            }
+            if (!byCheck[row.checkId]) {
+                byCheck[row.checkId] = { check: row.check, scored: [], problems: [] }
+                order.push(row.checkId)
+            }
+            if (this._isProblem(row)) {
+                byCheck[row.checkId].problems.push(row)
+            } else {
+                byCheck[row.checkId].scored.push(row)
+            }
+        }
+
+        if (!order.length) {
+            return this._empty('No scored checks produced results for this pillar in this run.')
+        }
+
+        order.sort(function (a, b) {
+            var ca = byCheck[a].check
+            var cb = byCheck[b].check
+            return ca.order - cb.order || (ca.name < cb.name ? -1 : ca.name > cb.name ? 1 : 0)
+        })
+
+        var out = []
+        for (var k = 0; k < order.length; k++) {
+            var group = byCheck[order[k]]
+            var check = group.check
+
+            // Overall pass rate across classes, weighted by each class population.
+            var weighted = 0
+            var weight = 0
+            for (var s = 0; s < group.scored.length; s++) {
+                if (group.scored[s].passRate !== null) {
+                    weighted += group.scored[s].passRate * group.scored[s].population
+                    weight += group.scored[s].population
+                }
+            }
+            var overall = weight > 0 ? Math.round((weighted / weight) * 10) / 10 : null
+
+            out.push('<div class="gov-check">')
+            out.push('<h3 class="gov-check-name">' + this._esc(check.name) + '</h3>')
+            out.push(
+                '<p class="gov-sub">Severity ' +
+                    this._esc(check.severity) +
+                    ' | weight ' +
+                    check.weight +
+                    ' | pass rate ' +
+                    this._pct(overall) +
+                    ' across ' +
+                    this._int(weight) +
+                    ' CIs, weighted by class population.</p>'
+            )
+            if (check.description) {
+                out.push('<p class="gov-desc">' + this._esc(check.description) + '</p>')
+            }
+
+            if (group.scored.length) {
+                group.scored.sort(function (a, b) {
+                    return b.failing - a.failing
+                })
+                out.push('<div class="gov-scroll"><table class="gov-table gov-table-tight">')
+                out.push(
+                    '<thead><tr><th scope="col">Class</th><th scope="col">Failing</th><th scope="col">Population</th><th scope="col">Pass rate</th></tr></thead><tbody>'
+                )
+                for (var c = 0; c < group.scored.length; c++) {
+                    var scored = group.scored[c]
+                    out.push('<tr>')
+                    out.push('<th scope="row" class="gov-mono">' + this._esc(scored.ciClass) + '</th>')
+                    out.push('<td class="gov-num">' + this._failing(scored, allRows) + '</td>')
+                    out.push('<td class="gov-num">' + this._int(scored.population) + '</td>')
+                    out.push('<td class="gov-num">' + this._pct(scored.passRate) + '</td>')
+                    out.push('</tr>')
+                }
+                out.push('</tbody></table></div>')
+            }
+
+            if (group.problems.length) {
+                out.push('<ul class="gov-problems">')
+                for (var p = 0; p < group.problems.length; p++) {
+                    var problem = group.problems[p]
+                    out.push(
+                        '<li><span class="gov-mono">' +
+                            this._esc(problem.ciClass || 'Unspecified class') +
+                            '</span> -- ' +
+                            this._esc(problem.status === 'error' ? 'Error: ' : 'Not applicable: ') +
+                            this._esc(problem.errorMessage || 'no reason recorded.') +
+                            '</li>'
+                    )
+                }
+                out.push('</ul>')
+            }
+
+            if (check.recommendation) {
+                out.push('<p class="gov-rec"><strong>Recommended action.</strong> ' + this._esc(check.recommendation) + '</p>')
+            }
+            out.push('</div>')
+        }
+        return out.join('\n')
+    },
+
+    /** Class x field grid of empty counts, from the completeness detail rows. */
+    _fieldMatrix: function (rows) {
+        var cells = {}
+        var classes = []
+        var fields = []
+
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i]
+            if (!this._isDetail(row)) {
+                continue
+            }
+            if (classes.indexOf(row.ciClass) === -1) {
+                classes.push(row.ciClass)
+            }
+            if (fields.indexOf(row.fieldName) === -1) {
+                fields.push(row.fieldName)
+            }
+            cells[row.ciClass + '|' + row.fieldName] = row
+        }
+        if (!classes.length || !fields.length) {
+            return this._empty('No completeness detail rows in this run.')
+        }
+        classes.sort()
+        fields.sort()
+
+        var out = ['<div class="gov-scroll"><table class="gov-table gov-table-tight">']
+        out.push('<caption>Empty-value count per class and required field, with the percentage of CIs that have the field populated.</caption>')
+        out.push('<thead><tr><th scope="col">Class</th>')
+        for (var f = 0; f < fields.length; f++) {
+            out.push('<th scope="col" class="gov-mono">' + this._esc(fields[f]) + '</th>')
+        }
+        out.push('</tr></thead><tbody>')
+
+        for (var c = 0; c < classes.length; c++) {
+            out.push('<tr><th scope="row" class="gov-mono">' + this._esc(classes[c]) + '</th>')
+            for (var g = 0; g < fields.length; g++) {
+                var cell = cells[classes[c] + '|' + fields[g]]
+                if (!cell) {
+                    out.push('<td class="gov-num gov-dim">n/a</td>')
+                    continue
+                }
+                var populated = cell.population > 0 ? Math.round((100 * (1 - cell.failing / cell.population)) * 10) / 10 : null
+                out.push(
+                    '<td class="gov-num">' +
+                        this._failing(cell, rows) +
+                        '<span class="gov-sub">' +
+                        this._pct(populated) +
+                        ' populated</span></td>'
+                )
+            }
+            out.push('</tr>')
+        }
+        out.push('</tbody></table></div>')
+        return out.join('\n')
+    },
+
+    /** Largest duplicate groups per class. */
+    _duplicates: function (rows) {
+        var byClass = {}
+        var classes = []
+        for (var i = 0; i < rows.length; i++) {
+            if (!this._isDuplicate(rows[i])) {
+                continue
+            }
+            var cls = rows[i].ciClass
+            if (!byClass[cls]) {
+                byClass[cls] = []
+                classes.push(cls)
+            }
+            byClass[cls].push(rows[i])
+        }
+        if (!classes.length) {
+            return this._empty('No duplicate names found.')
+        }
+        classes.sort()
+
+        var out = []
+        for (var c = 0; c < classes.length; c++) {
+            var groups = byClass[classes[c]].sort(function (a, b) {
+                return b.failing - a.failing
+            })
+            groups = groups.slice(0, 10)
+            out.push('<h3 class="gov-check-name gov-mono">' + this._esc(classes[c]) + '</h3>')
+            out.push('<div class="gov-scroll"><table class="gov-table gov-table-tight">')
+            out.push('<thead><tr><th scope="col">Duplicated name</th><th scope="col">CIs sharing it</th></tr></thead><tbody>')
+            for (var g = 0; g < groups.length; g++) {
+                out.push(
+                    '<tr><th scope="row">' +
+                        this._esc(groups[g].groupValue) +
+                        '</th><td class="gov-num">' +
+                        this._failing(groups[g], rows) +
+                        '</td></tr>'
+                )
+            }
+            out.push('</tbody></table></div>')
+        }
+        return out.join('\n')
+    },
+
+    /* ============================================================== *
+     * Failing counts and drill-down
+     * ============================================================== */
+
+    /**
+     * A failing count, linked to the engine's stored list_url when present.
+     * Completeness roll-up rows are labelled as empty VALUES across fields,
+     * because their `failing` is a sum and can exceed the population.
+     */
+    _failing: function (row, allRows) {
+        var label
+        var described
+
+        if (this._isRollup(row)) {
+            var fieldCount = this._rollupFieldCount(allRows, row.checkId, row.ciClass)
+            label = this._int(row.failing) + ' empty values'
+            described = this._int(row.failing) + ' empty values across ' + fieldCount + ' fields on ' + row.ciClass
+            label += '<span class="gov-sub">across ' + fieldCount + ' fields</span>'
+        } else if (this._isDuplicate(row)) {
+            label = this._int(row.failing) + ' CIs'
+            described = this._int(row.failing) + ' CIs named ' + row.groupValue + ' on ' + row.ciClass
+        } else if (this._isDetail(row)) {
+            label = this._int(row.failing) + ' empty'
+            described = this._int(row.failing) + ' CIs with an empty ' + row.fieldName + ' on ' + row.ciClass
+        } else {
+            label = this._int(row.failing) + ''
+            described =
+                this._int(row.failing) +
+                ' failing CIs for ' +
+                (row.check ? row.check.name : 'this check') +
+                ' on ' +
+                row.ciClass
+        }
+
+        var url = this._safeUrl(row.listUrl)
+        if (url === '') {
+            return label
+        }
+        return (
+            '<a class="gov-link" href="' +
+            this._esc(url) +
+            '" target="_blank" rel="noopener noreferrer" aria-label="' +
+            this._esc('Open ' + described + ' in a new tab') +
+            '">' +
+            label +
+            '</a>'
+        )
+    },
+
+    /** Distinct required fields behind a class-level completeness roll-up. */
+    _rollupFieldCount: function (rows, checkId, ciClass) {
+        var seen = {}
+        var total = 0
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i]
+            if (row.checkId === checkId && row.ciClass === ciClass && row.fieldName !== '' && !seen[row.fieldName]) {
+                seen[row.fieldName] = true
+                total++
+            }
+        }
+        return total
+    },
+
+    /** Only relative or http(s) targets become links. */
+    _safeUrl: function (url) {
+        var raw = (url || '').trim()
+        if (raw === '') {
+            return ''
+        }
+        if (raw.charAt(0) === '/') {
+            return raw
+        }
+        if (raw.indexOf('https://') === 0 || raw.indexOf('http://') === 0) {
+            return raw
+        }
+        if (raw.indexOf(':') === -1) {
+            return '/' + raw
+        }
+        return ''
+    },
+
+    /* ============================================================== *
+     * Formatting helpers
+     * ============================================================== */
+
+    _band: function (score) {
+        if (score === null || score === undefined || isNaN(score)) {
+            return { cls: 'gov-none', label: 'No score' }
+        }
+        if (score >= 90) {
+            return { cls: 'gov-good', label: 'Healthy' }
+        }
+        if (score >= 75) {
+            return { cls: 'gov-warn', label: 'Needs attention' }
+        }
+        return { cls: 'gov-bad', label: 'At risk' }
+    },
+
+    _pillarById: function (id) {
+        for (var i = 0; i < this.PILLARS.length; i++) {
+            if (this.PILLARS[i].id === id) {
+                return this.PILLARS[i]
+            }
+        }
+        return null
+    },
+
+    _pillarLabel: function (id) {
+        var pillar = this._pillarById(id)
+        return pillar ? pillar.label : id || 'Unknown'
+    },
+
+    /** Marks a detail row in a check name, e.g. "Required fields empty (os)". */
+    _fieldSuffix: function (row) {
+        if (row.fieldName === '') {
+            return ''
+        }
+        return ' <span class="gov-sub gov-mono">' + this._esc(row.fieldName) + '</span>'
+    },
+
+    /** One decimal place, or a dash when there is no score. */
+    _score: function (value) {
+        if (value === null || value === undefined || isNaN(value)) {
+            return '--'
+        }
+        return (Math.round(value * 10) / 10).toFixed(1)
+    },
+
+    _pct: function (value) {
+        if (value === null || value === undefined || isNaN(value)) {
+            return '--'
+        }
+        return (Math.round(value * 10) / 10).toFixed(1) + '%'
+    },
+
+    _notice: function (kind, text) {
+        return '<p class="gov-notice gov-notice-' + kind + '">' + this._esc(text) + '</p>'
+    },
+
+    _empty: function (text) {
+        return '<p class="gov-empty">' + this._esc(text) + '</p>'
+    },
+
+    _int: function (value) {
+        var parsed = parseInt(value, 10)
+        return isNaN(parsed) ? 0 : parsed
+    },
+
+    _num: function (value) {
+        var raw = (value === null || value === undefined ? '' : '' + value).trim()
+        if (raw === '') {
+            return null
+        }
+        var parsed = parseFloat(raw)
+        return isNaN(parsed) ? null : parsed
+    },
+
+    /** HTML escape. Every value taken from a record passes through this. */
+    _esc: function (text) {
+        var str = text === null || text === undefined ? '' : '' + text
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+    },
+
+    type: 'CMDBGovDashboard',
+}
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 17:30:27</sys_created_on>
+        <sys_id>68045bac5785447da94397669815f119</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>CMDBGovDashboard</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_script_include_68045bac5785447da94397669815f119</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 17:30:27</sys_updated_on>
+    </sys_script_include>
+</record_update>
