@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="sys_app_application">
+    <sys_app_application action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <category/>
+        <description>Governance scoring and remediation reporting for the CMDB.</description>
+        <device_type>browser</device_type>
+        <hint>CMDB governance assessments, checks and configuration.</hint>
+        <name>CMDB Governance</name>
+        <order>100</order>
+        <roles>x_cmdbgov_app.viewer</roles>
+        <sys_class_name>sys_app_application</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 12:23:52</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_domain_path>/</sys_domain_path>
+        <sys_id>79eddbc473184af28176c7c83bd488e3</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>CMDB Governance</sys_name>
+        <sys_overrides/>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_app_application_79eddbc473184af28176c7c83bd488e3</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 12:23:52</sys_updated_on>
+        <title>CMDB Governance</title>
+        <view_name/>
+    </sys_app_application>
+</record_update>
