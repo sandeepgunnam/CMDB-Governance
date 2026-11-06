@@ -5,10 +5,10 @@
         <ci_class>cmdb_ci_service_auto</ci_class>
         <field_name>busines_criticality</field_name>
         <sys_created_by>admin</sys_created_by>
-        <sys_created_on>2026-11-06 05:17:52</sys_created_on>
+        <sys_created_on>2026-11-06 10:49:43</sys_created_on>
         <sys_id>4391962fce354ebd9d7932d937dc5284</sys_id>
         <sys_mod_count>0</sys_mod_count>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-11-06 05:17:52</sys_updated_on>
+        <sys_updated_on>2026-11-06 10:49:43</sys_updated_on>
     </x_cmdbgov_app_required_field>
 </record_update>
