@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_check">
+    <x_cmdbgov_app_check action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <check_type>metric</check_type>
+        <code>legacy_cert_open</code>
+        <description>Counts open tasks from the legacy CMDB certification feature, which some instances still run alongside Data Manager.</description>
+        <duplicate_field>name</duplicate_field>
+        <excluded_class_prefixes/>
+        <failure_condition>active=true</failure_condition>
+        <fallback_condition/>
+        <metric_table>cert_task</metric_table>
+        <name>Open legacy certification tasks</name>
+        <order>230</order>
+        <pillar>lifecycle</pillar>
+        <recommendation>Migrate remaining legacy certification schedules onto Data Manager policies and drain this queue.</recommendation>
+        <required_field/>
+        <scored>false</scored>
+        <severity/>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:52</sys_created_on>
+        <sys_id>cbcd0ae104054b1a90debe3a23174b85</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:52</sys_updated_on>
+        <weight>0</weight>
+    </x_cmdbgov_app_check>
+</record_update>

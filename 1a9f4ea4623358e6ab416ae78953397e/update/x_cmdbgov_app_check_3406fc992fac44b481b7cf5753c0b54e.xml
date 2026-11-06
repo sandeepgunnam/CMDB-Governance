@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_check">
+    <x_cmdbgov_app_check action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <check_type>condition</check_type>
+        <code>stale</code>
+        <description>Flags CIs neither discovered nor updated inside the configured stale_days window, which suggests the record no longer reflects reality.</description>
+        <duplicate_field>name</duplicate_field>
+        <excluded_class_prefixes/>
+        <failure_condition>last_discoveredISNOTEMPTY^last_discovered&lt;{STALE_DATE}^NQlast_discoveredISEMPTY^sys_updated_on&lt;{STALE_DATE}</failure_condition>
+        <fallback_condition>sys_updated_on&lt;{STALE_DATE}</fallback_condition>
+        <metric_table/>
+        <name>Stale CIs</name>
+        <order>70</order>
+        <pillar>quality</pillar>
+        <recommendation>Confirm the CI still exists and bring it back under discovery, or retire it if it has already been decommissioned.</recommendation>
+        <required_field>last_discovered</required_field>
+        <scored>true</scored>
+        <severity>high</severity>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:51</sys_created_on>
+        <sys_id>3406fc992fac44b481b7cf5753c0b54e</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:51</sys_updated_on>
+        <weight>3</weight>
+    </x_cmdbgov_app_check>
+</record_update>

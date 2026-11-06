@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_check">
+    <x_cmdbgov_app_check action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <check_type>condition</check_type>
+        <code>not_in_service</code>
+        <description>Flags CIs with no service association, so an outage on them cannot be translated into business impact.</description>
+        <duplicate_field>name</duplicate_field>
+        <excluded_class_prefixes>cmdb_ci_service</excluded_class_prefixes>
+        <failure_condition>RLQUERYsvc_ci_assoc.ci_id,=0^ENDRLQUERY</failure_condition>
+        <fallback_condition/>
+        <metric_table/>
+        <name>Not part of any service</name>
+        <order>110</order>
+        <pillar>relationships</pillar>
+        <recommendation>Attach the CI to the business or technical service it supports so impact analysis and priority derivation work.</recommendation>
+        <required_field/>
+        <scored>true</scored>
+        <severity>medium</severity>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:51</sys_created_on>
+        <sys_id>385ee496a1ee4a55987033744db25e4f</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:51</sys_updated_on>
+        <weight>2</weight>
+    </x_cmdbgov_app_check>
+</record_update>

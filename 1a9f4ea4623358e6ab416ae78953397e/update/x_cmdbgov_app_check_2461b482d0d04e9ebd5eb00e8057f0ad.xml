@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_check">
+    <x_cmdbgov_app_check action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <check_type>condition</check_type>
+        <code>inactive_owner</code>
+        <description>Flags CIs whose owner points at a deactivated user account, which makes the recorded accountability nominal only.</description>
+        <duplicate_field>name</duplicate_field>
+        <excluded_class_prefixes/>
+        <failure_condition>owned_byISNOTEMPTY^owned_by.active=false</failure_condition>
+        <fallback_condition/>
+        <metric_table/>
+        <name>Owner inactive</name>
+        <order>20</order>
+        <pillar>ownership</pillar>
+        <recommendation>Reassign ownership to an active employee as a standard step in the leaver offboarding process.</recommendation>
+        <required_field>owned_by</required_field>
+        <scored>true</scored>
+        <severity>high</severity>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:51</sys_created_on>
+        <sys_id>2461b482d0d04e9ebd5eb00e8057f0ad</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:51</sys_updated_on>
+        <weight>3</weight>
+    </x_cmdbgov_app_check>
+</record_update>

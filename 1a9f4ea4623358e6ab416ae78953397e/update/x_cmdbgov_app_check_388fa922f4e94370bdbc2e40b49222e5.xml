@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_check">
+    <x_cmdbgov_app_check action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <check_type>condition</check_type>
+        <code>retired_mismatch</code>
+        <description>Flags CIs marked operationally retired while install_status still claims otherwise, a direct contradiction between the two status fields.</description>
+        <duplicate_field>name</duplicate_field>
+        <excluded_class_prefixes/>
+        <failure_condition>operational_status=6^install_status!=7</failure_condition>
+        <fallback_condition/>
+        <metric_table/>
+        <name>Retired but still installed</name>
+        <order>120</order>
+        <pillar>lifecycle</pillar>
+        <recommendation>Align install_status with operational_status and finish the decommission workflow.</recommendation>
+        <required_field>operational_status</required_field>
+        <scored>true</scored>
+        <severity>medium</severity>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:51</sys_created_on>
+        <sys_id>388fa922f4e94370bdbc2e40b49222e5</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:51</sys_updated_on>
+        <weight>2</weight>
+    </x_cmdbgov_app_check>
+</record_update>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_check">
+    <x_cmdbgov_app_check action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <check_type>metric</check_type>
+        <code>dm_tasks_open</code>
+        <description>Counts open certification and attestation tasks, showing how much data stewardship work is currently outstanding.</description>
+        <duplicate_field>name</duplicate_field>
+        <excluded_class_prefixes/>
+        <failure_condition>active=true</failure_condition>
+        <fallback_condition/>
+        <metric_table>cmdb_data_management_task</metric_table>
+        <name>Open certification/attestation tasks</name>
+        <order>210</order>
+        <pillar>lifecycle</pillar>
+        <recommendation>Compare the open queue against your certification cycle and follow up with groups that never close their tasks.</recommendation>
+        <required_field/>
+        <scored>false</scored>
+        <severity/>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:51</sys_created_on>
+        <sys_id>1eba868948ae412492ebc5868288bef5</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:51</sys_updated_on>
+        <weight>0</weight>
+    </x_cmdbgov_app_check>
+</record_update>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_check">
+    <x_cmdbgov_app_check action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <check_type>metric</check_type>
+        <code>open_dedup_tasks</code>
+        <description>Counts open de-duplication tasks instance-wide as an indicator of how much duplicate-CI remediation is currently in flight.</description>
+        <duplicate_field>name</duplicate_field>
+        <excluded_class_prefixes/>
+        <failure_condition>active=true</failure_condition>
+        <fallback_condition/>
+        <metric_table>reconcile_duplicate_task</metric_table>
+        <name>Open de-duplication tasks</name>
+        <order>160</order>
+        <pillar>quality</pillar>
+        <recommendation>Keep this queue trending down; a growing backlog means duplicates are being detected faster than they are being reconciled.</recommendation>
+        <required_field/>
+        <scored>false</scored>
+        <severity/>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:52</sys_created_on>
+        <sys_id>be3ee75abfc44e28912d9c4dc55f257f</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:52</sys_updated_on>
+        <weight>0</weight>
+    </x_cmdbgov_app_check>
+</record_update>

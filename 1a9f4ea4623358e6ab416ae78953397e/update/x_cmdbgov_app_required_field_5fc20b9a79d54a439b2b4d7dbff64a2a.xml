@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_cmdbgov_app_required_field">
+    <x_cmdbgov_app_required_field action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <applies_to_all_classes>true</applies_to_all_classes>
+        <ci_class/>
+        <field_name>operational_status</field_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:17:52</sys_created_on>
+        <sys_id>5fc20b9a79d54a439b2b4d7dbff64a2a</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:17:52</sys_updated_on>
+    </x_cmdbgov_app_required_field>
+</record_update>
