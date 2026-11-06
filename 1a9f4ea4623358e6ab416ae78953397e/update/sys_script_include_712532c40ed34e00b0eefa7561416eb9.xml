@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_cmdbgov_app.CMDBGovDataSource</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description>Read-only CMDB data access for the governance assessment. Supports local mode (GlideRecord/GlideAggregate) and remote mode (REST Table and Aggregate APIs over GET only, authenticated with a Basic or OAuth 2.0 profile). Exposes describe, instanceUrl, tableExists, fieldExists, count, groupCount, list and test.</description>
+        <mobile_callable>false</mobile_callable>
+        <name>CMDBGovDataSource</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[/**
+ * CMDBGovDataSource
+ *
+ * Single read-only access layer for every CMDB query the governance
+ * assessment performs. Two modes, identical results:
+ *
+ *   local  - GlideRecord / GlideAggregate against this instance
+ *   remote - sn_ws.RESTMessageV2 GET against another instance's
+ *            /api/now/stats and /api/now/table endpoints
+ *
+ * STRICTLY READ-ONLY. The public surface exposes only counting, grouping,
+ * listing and existence probes; there is no record-mutating Glide call
+ * anywhere in this class, and the remote path hard-codes the GET verb.
+ *
+ * Usage:
+ *   var gr = new GlideRecord('x_cmdbgov_app_connection');
+ *   gr.get(connectionSysId);
+ *   var ds = new CMDBGovDataSource(gr);
+ *   ds.count('cmdb_ci', 'install_status!=7');
+ */
+var CMDBGovDataSource = Class.create()
+
+CMDBGovDataSource.prototype = {
+    REST_TIMEOUT_MS: 120000,
+    ERROR_BODY_CHARS: 300,
+
+    /**
+     * @param {GlideRecord} connectionGr a record from x_cmdbgov_app_connection
+     */
+    initialize: function (connectionGr) {
+        this._mode = 'local'
+        this._instanceUrl = ''
+        this._authType = ''
+        this._basicProfile = ''
+        this._oauthProfile = ''
+        this._connectionName = 'Local instance'
+
+        if (connectionGr && connectionGr.isValidRecord && connectionGr.isValidRecord()) {
+            this._mode = connectionGr.getValue('mode') || 'local'
+            this._instanceUrl = connectionGr.getValue('instance_url') || ''
+            this._authType = connectionGr.getValue('auth_type') || ''
+            this._basicProfile = connectionGr.getValue('basic_auth_profile') || ''
+            this._oauthProfile = connectionGr.getValue('oauth_profile') || ''
+            this._connectionName = connectionGr.getValue('name') || this._connectionName
+        }
+
+        // Per-instance caches for existence probes.
+        this._tableCache = {}
+        this._fieldCache = {}
+        this._remoteKeyCache = {}
+    },
+
+    /* ============================================================== *
+     * Description
+     * ============================================================== */
+
+    describe: function () {
+        return {
+            mode: this._mode,
+            instanceUrl: this.instanceUrl(),
+            authType: this._authType,
+        }
+    },
+
+    /**
+     * Base URL of the instance being read, always ending in "/".
+     */
+    instanceUrl: function () {
+        var url = this._isRemote() ? this._instanceUrl : gs.getProperty('glide.servlet.uri', '')
+        url = ('' + (url || '')).trim()
+        if (url && url.charAt(url.length - 1) !== '/') {
+            url += '/'
+        }
+        return url
+    },
+
+    /* ============================================================== *
+     * Existence probes (cached per instance)
+     * ============================================================== */
+
+    tableExists: function (table) {
+        if (!table) {
+            return false
+        }
+        if (this._tableCache.hasOwnProperty(table)) {
+            return this._tableCache[table]
+        }
+
+        var exists
+        if (this._isRemote()) {
+            exists = this._remoteKeys(table) !== null
+        } else {
+            exists = new GlideRecord(table).isValid()
+        }
+
+        this._tableCache[table] = exists
+        return exists
+    },
+
+    fieldExists: function (table, field) {
+        if (!table || !field) {
+            return false
+        }
+        var cacheKey = table + '.' + field
+        if (this._fieldCache.hasOwnProperty(cacheKey)) {
+            return this._fieldCache[cacheKey]
+        }
+
+        var exists = false
+        if (this._isRemote()) {
+            var keys = this._remoteKeys(table)
+            exists = !!keys && keys.hasOwnProperty(field)
+        } else {
+            var gr = new GlideRecord(table)
+            exists = gr.isValid() && gr.isValidField(field)
+        }
+
+        this._fieldCache[cacheKey] = exists
+        return exists
+    },
+
+    /* ============================================================== *
+     * Counting
+     * ============================================================== */
+
+    /**
+     * @return {number} number of records matching encodedQuery
+     */
+    count: function (table, encodedQuery) {
+        if (this._isRemote()) {
+            return this._remoteCount(table, encodedQuery)
+        }
+        return this._localCount(table, encodedQuery)
+    },
+
+    _localCount: function (table, encodedQuery) {
+        var ga = new GlideAggregate(table)
+        if (encodedQuery) {
+            ga.addEncodedQuery(encodedQuery)
+        }
+        ga.addAggregate('COUNT')
+        ga.query()
+        if (ga.next()) {
+            return this._toInt(ga.getAggregate('COUNT'))
+        }
+        return 0
+    },
+
+    _remoteCount: function (table, encodedQuery) {
+        var params = {
+            sysparm_count: 'true',
+            sysparm_display_value: 'all',
+        }
+        if (encodedQuery) {
+            params.sysparm_query = encodedQuery
+        }
+        var body = this._get('/api/now/stats/' + table, params)
+        var result = body && body.result ? body.result : null
+        if (!result) {
+            return 0
+        }
+        // Non-grouped stats responses return a single object.
+        if (result.stats && result.stats.count !== undefined) {
+            return this._toInt(result.stats.count)
+        }
+        if (this._isArray(result) && result.length && result[0].stats) {
+            return this._toInt(result[0].stats.count)
+        }
+        return 0
+    },
+
+    /* ============================================================== *
+     * Grouping
+     * ============================================================== */
+
+    /**
+     * @param {number} minCount only groups with at least this many members
+     * @param {number} limit    0 or omitted for no limit
+     * @return {Array} [{value, display, count}] sorted by count descending
+     */
+    groupCount: function (table, field, encodedQuery, minCount, limit) {
+        var min = this._toInt(minCount)
+        if (min < 1) {
+            min = 1
+        }
+        var max = this._toInt(limit)
+
+        var groups = this._isRemote()
+            ? this._remoteGroupCount(table, field, encodedQuery, min)
+            : this._localGroupCount(table, field, encodedQuery, min)
+
+        groups.sort(function (a, b) {
+            return b.count - a.count
+        })
+
+        if (max > 0 && groups.length > max) {
+            groups = groups.slice(0, max)
+        }
+        return groups
+    },
+
+    _localGroupCount: function (table, field, encodedQuery, minCount) {
+        var ga = new GlideAggregate(table)
+        if (encodedQuery) {
+            ga.addEncodedQuery(encodedQuery)
+        }
+        ga.addAggregate('COUNT')
+        ga.groupBy(field)
+
+        // addHaving pushes the minimum-size filter into the database.
+        var havingApplied = false
+        if (minCount > 1) {
+            try {
+                ga.addHaving('COUNT', '>', '' + (minCount - 1))
+                havingApplied = true
+            } catch (e) {
+                havingApplied = false
+            }
+        }
+        ga.query()
+
+        var groups = []
+        while (ga.next()) {
+            var count = this._toInt(ga.getAggregate('COUNT'))
+            if (!havingApplied && count < minCount) {
+                continue
+            }
+            var value = ga.getValue(field)
+            var display = ga.getDisplayValue(field)
+            groups.push({
+                value: value === null ? '' : '' + value,
+                display: display ? '' + display : value === null ? '' : '' + value,
+                count: count,
+            })
+        }
+        return groups
+    },
+
+    _remoteGroupCount: function (table, field, encodedQuery, minCount) {
+        var params = {
+            sysparm_count: 'true',
+            sysparm_group_by: field,
+            sysparm_display_value: 'all',
+        }
+        if (encodedQuery) {
+            params.sysparm_query = encodedQuery
+        }
+        if (minCount > 1) {
+            params.sysparm_having = 'count^' + field + '^>^' + (minCount - 1)
+        }
+
+        var body = this._get('/api/now/stats/' + table, params)
+        var result = body && body.result ? body.result : []
+        if (!this._isArray(result)) {
+            result = [result]
+        }
+
+        var groups = []
+        for (var i = 0; i < result.length; i++) {
+            var row = result[i]
+            if (!row || !row.stats) {
+                continue
+            }
+            var count = this._toInt(row.stats.count)
+            if (count < minCount) {
+                continue
+            }
+            var value = ''
+            var display = ''
+            var gf = row.groupby_fields
+            if (this._isArray(gf)) {
+                for (var j = 0; j < gf.length; j++) {
+                    if (gf[j] && gf[j].field === field) {
+                        value = gf[j].value === undefined || gf[j].value === null ? '' : '' + gf[j].value
+                        display = gf[j].display_value === undefined || gf[j].display_value === null ? '' : '' + gf[j].display_value
+                        break
+                    }
+                }
+            }
+            groups.push({
+                value: value,
+                display: display || value,
+                count: count,
+            })
+        }
+        return groups
+    },
+
+    /* ============================================================== *
+     * Listing
+     * ============================================================== */
+
+    /**
+     * @param {Array} fields field names to return
+     * @param {number} limit 0 or omitted for no limit
+     * @param {string} orderByDescField optional field to sort on, descending
+     * @return {Array} [{sys_id, <field>: {value, display}}]
+     */
+    list: function (table, encodedQuery, fields, limit, orderByDescField) {
+        var wanted = this._isArray(fields) ? fields : []
+        var max = this._toInt(limit)
+        if (this._isRemote()) {
+            return this._remoteList(table, encodedQuery, wanted, max, orderByDescField)
+        }
+        return this._localList(table, encodedQuery, wanted, max, orderByDescField)
+    },
+
+    _localList: function (table, encodedQuery, fields, limit, orderByDescField) {
+        var gr = new GlideRecord(table)
+        if (encodedQuery) {
+            gr.addEncodedQuery(encodedQuery)
+        }
+        if (orderByDescField) {
+            gr.orderByDesc(orderByDescField)
+        }
+        if (limit > 0) {
+            gr.setLimit(limit)
+        }
+        gr.query()
+
+        var rows = []
+        while (gr.next()) {
+            var row = { sys_id: '' + gr.getUniqueValue() }
+            for (var i = 0; i < fields.length; i++) {
+                var f = fields[i]
+                if (f === 'sys_id') {
+                    continue
+                }
+                var value = gr.getValue(f)
+                var display = gr.getDisplayValue(f)
+                row[f] = {
+                    value: value === null ? '' : '' + value,
+                    display: display === null || display === undefined ? '' : '' + display,
+                }
+            }
+            rows.push(row)
+        }
+        return rows
+    },
+
+    _remoteList: function (table, encodedQuery, fields, limit, orderByDescField) {
+        var query = encodedQuery || ''
+        if (orderByDescField) {
+            query = query ? query + '^ORDERBYDESC' + orderByDescField : 'ORDERBYDESC' + orderByDescField
+        }
+
+        var requestFields = ['sys_id']
+        for (var i = 0; i < fields.length; i++) {
+            if (fields[i] !== 'sys_id') {
+                requestFields.push(fields[i])
+            }
+        }
+
+        var params = {
+            sysparm_fields: requestFields.join(','),
+            sysparm_display_value: 'all',
+            sysparm_exclude_reference_link: 'true',
+        }
+        if (query) {
+            params.sysparm_query = query
+        }
+        if (limit > 0) {
+            params.sysparm_limit = '' + limit
+        }
+
+        var body = this._get('/api/now/table/' + table, params)
+        var result = body && body.result ? body.result : []
+        if (!this._isArray(result)) {
+            result = [result]
+        }
+
+        var rows = []
+        for (var r = 0; r < result.length; r++) {
+            var raw = result[r]
+            if (!raw) {
+                continue
+            }
+            var row = { sys_id: this._cellValue(raw.sys_id) }
+            for (var f = 0; f < fields.length; f++) {
+                var name = fields[f]
+                if (name === 'sys_id') {
+                    continue
+                }
+                row[name] = {
+                    value: this._cellValue(raw[name]),
+                    display: this._cellDisplay(raw[name]),
+                }
+            }
+            rows.push(row)
+        }
+        return rows
+    },
+
+    /* ============================================================== *
+     * Connectivity test
+     * ============================================================== */
+
+    /**
+     * @return {Object} {ok, count, ms, error}
+     */
+    test: function () {
+        var start = new Date().getTime()
+        try {
+            var total = this.count('cmdb_ci', '')
+            return {
+                ok: true,
+                count: total,
+                ms: new Date().getTime() - start,
+                error: '',
+            }
+        } catch (e) {
+            return {
+                ok: false,
+                count: -1,
+                ms: new Date().getTime() - start,
+                error: '' + (e.message || e),
+            }
+        }
+    },
+
+    /* ============================================================== *
+     * Internals
+     * ============================================================== */
+
+    _isRemote: function () {
+        return this._mode === 'remote'
+    },
+
+    /**
+     * One cached single-row probe per remote table. Returns the map of field
+     * keys present on the row, or null when the table is not addressable.
+     *
+     * Caveat: an existing but empty remote table yields no row, so no field
+     * keys can be observed; fieldExists then reports false for that table.
+     */
+    _remoteKeys: function (table) {
+        if (this._remoteKeyCache.hasOwnProperty(table)) {
+            return this._remoteKeyCache[table]
+        }
+
+        var keys = null
+        try {
+            var body = this._get('/api/now/table/' + table, { sysparm_limit: '1' })
+            var result = body && body.result ? body.result : []
+            if (!this._isArray(result)) {
+                result = [result]
+            }
+            keys = {}
+            if (result.length && result[0]) {
+                for (var k in result[0]) {
+                    if (result[0].hasOwnProperty(k)) {
+                        keys[k] = true
+                    }
+                }
+            }
+        } catch (e) {
+            // A non-2xx response means the table is not readable or absent.
+            keys = null
+        }
+
+        this._remoteKeyCache[table] = keys
+        return keys
+    },
+
+    /**
+     * Performs a GET against the remote instance. GET is the only verb this
+     * class ever issues.
+     */
+    _get: function (path, params) {
+        var endpoint = this.instanceUrl().replace(/\/$/, '') + path + this._queryString(params)
+
+        var request = new sn_ws.RESTMessageV2()
+        request.setHttpMethod('get')
+        request.setEndpoint(endpoint)
+        request.setRequestHeader('Accept', 'application/json')
+        request.setHttpTimeout(this.REST_TIMEOUT_MS)
+
+        if (this._authType === 'basic' && this._basicProfile) {
+            request.setAuthenticationProfile('basic', this._basicProfile)
+        } else if (this._authType === 'oauth2' && this._oauthProfile) {
+            request.setAuthenticationProfile('oauth2', this._oauthProfile)
+        }
+
+        var response = request.execute()
+        var status = this._toInt(response.getStatusCode())
+        var body = response.getBody()
+        var bodyText = body === null || body === undefined ? '' : '' + body
+
+        if (status < 200 || status > 299) {
+            throw new Error(
+                'CMDBGovDataSource: GET ' +
+                    path +
+                    ' on "' +
+                    this._connectionName +
+                    '" returned HTTP ' +
+                    status +
+                    ': ' +
+                    bodyText.substring(0, this.ERROR_BODY_CHARS)
+            )
+        }
+
+        try {
+            return JSON.parse(bodyText)
+        } catch (e) {
+            throw new Error(
+                'CMDBGovDataSource: GET ' +
+                    path +
+                    ' on "' +
+                    this._connectionName +
+                    '" returned HTTP ' +
+                    status +
+                    ' with an unparsable body: ' +
+                    bodyText.substring(0, this.ERROR_BODY_CHARS)
+            )
+        }
+    },
+
+    _queryString: function (params) {
+        if (!params) {
+            return ''
+        }
+        var pairs = []
+        for (var key in params) {
+            if (params.hasOwnProperty(key) && params[key] !== undefined && params[key] !== null && params[key] !== '') {
+                pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
+            }
+        }
+        return pairs.length ? '?' + pairs.join('&') : ''
+    },
+
+    /**
+     * With sysparm_display_value=all each cell is {value, display_value};
+     * with sysparm_exclude_reference_link=true no link member is present.
+     */
+    _cellValue: function (cell) {
+        if (cell === null || cell === undefined) {
+            return ''
+        }
+        if (typeof cell === 'object') {
+            return cell.value === null || cell.value === undefined ? '' : '' + cell.value
+        }
+        return '' + cell
+    },
+
+    _cellDisplay: function (cell) {
+        if (cell === null || cell === undefined) {
+            return ''
+        }
+        if (typeof cell === 'object') {
+            if (cell.display_value !== null && cell.display_value !== undefined && cell.display_value !== '') {
+                return '' + cell.display_value
+            }
+            return cell.value === null || cell.value === undefined ? '' : '' + cell.value
+        }
+        return '' + cell
+    },
+
+    _isArray: function (candidate) {
+        return Object.prototype.toString.call(candidate) === '[object Array]'
+    },
+
+    _toInt: function (candidate) {
+        var parsed = parseInt(candidate, 10)
+        return isNaN(parsed) ? 0 : parsed
+    },
+
+    type: 'CMDBGovDataSource',
+}
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:34:49</sys_created_on>
+        <sys_id>712532c40ed34e00b0eefa7561416eb9</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>CMDBGovDataSource</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_script_include_712532c40ed34e00b0eefa7561416eb9</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:34:49</sys_updated_on>
+    </sys_script_include>
+</record_update>
