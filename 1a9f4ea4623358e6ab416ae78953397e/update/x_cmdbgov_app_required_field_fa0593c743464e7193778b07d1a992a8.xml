@@ -5,10 +5,10 @@
         <ci_class>cmdb_ci_business_app</ci_class>
         <field_name>it_application_owner</field_name>
         <sys_created_by>admin</sys_created_by>
-        <sys_created_on>2026-11-06 21:36:35</sys_created_on>
+        <sys_created_on>2026-11-07 03:27:57</sys_created_on>
         <sys_id>fa0593c743464e7193778b07d1a992a8</sys_id>
         <sys_mod_count>0</sys_mod_count>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-11-06 21:36:35</sys_updated_on>
+        <sys_updated_on>2026-11-07 03:27:57</sys_updated_on>
     </x_cmdbgov_app_required_field>
 </record_update>
