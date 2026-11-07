@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_user_role_contains">
     <sys_user_role_contains action="INSERT_OR_UPDATE">
-        <contains display_value="x_cmdbgov_app.viewer">a725e1d56cfc5e1cb9c145f5e937b02b</contains>
-        <role display_value="x_cmdbgov_app.admin">2a5256ad345d52d292a6a53b67485e0c</role>
+        <contains display_value="x_cmdbgov_app.viewer" name="x_cmdbgov_app.viewer">a725e1d56cfc5e1cb9c145f5e937b02b</contains>
+        <role display_value="x_cmdbgov_app.admin" name="x_cmdbgov_app.admin">2a5256ad345d52d292a6a53b67485e0c</role>
         <sys_class_name>sys_user_role_contains</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-10-18 04:54:05</sys_created_on>
         <sys_id>a323a9cb28995f4f8c96345c38b3e979</sys_id>
         <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_cmdbgov_app.viewer.x_cmdbgov_app.admin</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_user_role_contains_a323a9cb28995f4f8c96345c38b3e979</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
         <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
-        <sys_update_name>sys_user_role_contains_a323a9cb28995f4f8c96345c38b3e979</sys_update_name>
-        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
-        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
     </sys_user_role_contains>
 </record_update>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_index">
+    <sys_index action="INSERT_OR_UPDATE">
+        <access_method/>
+        <col_name_string>run,check</col_name_string>
+        <index_col_name>84e09e346cfd48f88dfefa8458067ca7,327a83ef45de4b20b56e717e77d23af8<sys_dictionary element="run" name="x_cmdbgov_app_result">84e09e346cfd48f88dfefa8458067ca7</sys_dictionary>
+            <sys_dictionary element="check" name="x_cmdbgov_app_result">327a83ef45de4b20b56e717e77d23af8</sys_dictionary>
+        </index_col_name>
+        <logical_table_name>x_cmdbgov_app_result</logical_table_name>
+        <sys_class_name>sys_index</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:03:05</sys_created_on>
+        <sys_id>95927010fc9a4288bbc65ac0d59664ee</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_cmdbgov_app_result</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_index_x_cmdbgov_app_result_run_check</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:03:05</sys_updated_on>
+        <table/>
+        <unique_index>false</unique_index>
+    </sys_index>
+</record_update>

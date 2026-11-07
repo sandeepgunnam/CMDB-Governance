@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element audit="true" db_object_id="935afe9afd7d47e3a5958e2f88e5e9c8" label="Governance Connection" name="x_cmdbgov_app_connection" type="collection">
+        <element choice="3" default="local" label="Mode" max_length="40" name="mode" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Remote" sequence="2" value="remote"/>
+                <element inactive_on_update="false" label="Local" sequence="1" value="local"/>
+            </choice>
+        </element>
+        <element label="Last test result" max_length="1000" name="last_test_result" type="string"/>
+        <element default="true" label="Active" name="active" type="boolean"/>
+        <element display="true" label="Name" mandatory="true" max_length="100" name="name" type="string"/>
+        <element label="Basic auth profile" name="basic_auth_profile" reference="sys_auth_profile_basic" reference_cascade_rule="none" type="reference"/>
+        <element hint="Base URL of the remote ServiceNow instance, e.g. https://example.service-now.com." label="Instance URL" max_length="1024" name="instance_url" type="url"/>
+        <element label="OAuth profile" name="oauth_profile" reference="oauth_entity_profile" reference_cascade_rule="none" type="reference"/>
+        <element choice="1" label="Authentication type" max_length="40" name="auth_type" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="OAuth 2.0" sequence="2" value="oauth2"/>
+                <element inactive_on_update="false" label="Basic" sequence="1" value="basic"/>
+            </choice>
+        </element>
+        <element label="Last tested" name="last_tested" type="glide_date_time"/>
+        <index name="index">
+            <element name="basic_auth_profile"/>
+        </index>
+        <index name="index2">
+            <element name="oauth_profile"/>
+        </index>
+    </element>
+</database>

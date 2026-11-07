@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_index">
+    <sys_index action="INSERT_OR_UPDATE">
+        <access_method/>
+        <col_name_string>ci_class,field_name</col_name_string>
+        <index_col_name>26bbbeced6a547b98d9e384d260750c4,d2780c4736854877b5fdfa0193cf7500<sys_dictionary element="ci_class" name="x_cmdbgov_app_required_field">26bbbeced6a547b98d9e384d260750c4</sys_dictionary>
+            <sys_dictionary element="field_name" name="x_cmdbgov_app_required_field">d2780c4736854877b5fdfa0193cf7500</sys_dictionary>
+        </index_col_name>
+        <logical_table_name>x_cmdbgov_app_required_field</logical_table_name>
+        <sys_class_name>sys_index</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 05:03:05</sys_created_on>
+        <sys_id>8f34d65df1134e579a7a242609d1b83f</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_cmdbgov_app_required_field</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_index_x_cmdbgov_app_required_field_ci_class_field_name</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 05:03:05</sys_updated_on>
+        <table/>
+        <unique_index>false</unique_index>
+    </sys_index>
+</record_update>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_ui_section caption="Check Result" section_id="2d690dd5a4b7466180d9801c25d73411" sys_domain="global" table="x_cmdbgov_app_result" version="3" view="">
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.begin_split</element>
+            <position>0</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>acb34c45fa594f93a6912f7d461c04d3</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type>.begin_split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>run</element>
+            <position>1</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>c9888aca2962483cb87dce3e7c50c76d</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>check</element>
+            <position>2</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>86d9ef36a88744a0af66659ecc7dbaa7</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>pillar</element>
+            <position>3</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>89bd5053614149c38fe8a3e0f56a7fc8</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>ci_class</element>
+            <position>4</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>5b234c010eb0456396e99d6e981b1514</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>field_name</element>
+            <position>5</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>58f0aeaa4a334f3298c802c721032c2d</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>group_value</element>
+            <position>6</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>3950e23796de4659af5b9ae5d2729e54</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.split</element>
+            <position>7</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>e55f49a68cee4977aa307bfeaa493b2c</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type>.split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>population</element>
+            <position>8</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>82bae9842c4a48a7a51d235a62b15216</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>failing</element>
+            <position>9</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>a3a6e36c3fb14ba99d8d8de506bda449</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>pass_rate</element>
+            <position>10</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>01f9b2c3872f4339a01b2410521190c0</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>metric_value</element>
+            <position>11</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>c86f69bb820e456ab9c5b24b35baf1a3</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>status</element>
+            <position>12</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>bfe323347fa94c1d8e171ee9a53b8523</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>list_url</element>
+            <position>13</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>aa8f782d03214d0ab8fe84c609e4f696</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.end_split</element>
+            <position>14</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>52e63d4ad23f4a45b335d314f596b7a3</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type>.end_split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>failing_query</element>
+            <position>15</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>1281478fd16b49088b566fd968763d00</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>error_message</element>
+            <position>16</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:51</sys_created_on>
+            <sys_id>5224199629414938971e62afb0e9ead6</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Check Result" display_value="Check Result" name="x_cmdbgov_app_result" sys_domain="global" view="Default view">2d690dd5a4b7466180d9801c25d73411</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:51</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_section action="INSERT_OR_UPDATE">
+            <caption>Check Result</caption>
+            <header>false</header>
+            <name>x_cmdbgov_app_result</name>
+            <roles/>
+            <sys_class_name>sys_ui_section</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-06 05:03:20</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>2d690dd5a4b7466180d9801c25d73411</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>x_cmdbgov_app_result</sys_name>
+            <sys_overrides/>
+            <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+            <sys_update_name>sys_ui_section_2d690dd5a4b7466180d9801c25d73411</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-06 05:03:20</sys_updated_on>
+            <sys_user/>
+            <title>false</title>
+            <view display_value="Default view" name="NULL">Default view</view>
+            <view_name/>
+        </sys_ui_section>
+    </sys_ui_section>
+</record_update>

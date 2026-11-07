@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_app_module">
+    <sys_app_module action="DELETE">
+        <active>true</active>
+        <application display_value="CMDB Governance">6a449ae2014d50efb9ddce75c46c914a</application>
+        <device_type>browser</device_type>
+        <hint/>
+        <link_type>DIRECT</link_type>
+        <order>200</order>
+        <override_menu_roles>false</override_menu_roles>
+        <query>sys_properties_list.do?sysparm_query=nameSTARTSWITHx_cmdbgov_app.</query>
+        <roles>x_cmdbgov_app.admin</roles>
+        <title>Properties</title>
+        <window_name/>
+        <sys_class_name>sys_app_module</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-18 04:54:05</sys_created_on>
+        <sys_id>25059917997758528b05ae1fbc9022dc</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
+        <sys_update_name>sys_app_module_25059917997758528b05ae1fbc9022dc</sys_update_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+    </sys_app_module>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</application>
+        <file_path/>
+        <instance_id>995b017adb8e31502f082a5913961940</instance_id>
+        <instance_name>dev194453</instance_name>
+        <merge_base/>
+        <name>sys_app_module_25059917997758528b05ae1fbc9022dc</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_app_module"><sys_app_module action="INSERT_OR_UPDATE"><active>true</active><application display_value="CMDB Governance">6a449ae2014d50efb9ddce75c46c914a</application><device_type>browser</device_type><hint/><link_type>DIRECT</link_type><order>200</order><override_menu_roles>false</override_menu_roles><query>sys_properties_list.do?sysparm_query=nameSTARTSWITHx_cmdbgov_app.</query><roles>x_cmdbgov_app.admin</roles><title>Properties</title><window_name/><sys_class_name>sys_app_module</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2026-10-18 04:54:05</sys_created_on><sys_id>25059917997758528b05ae1fbc9022dc</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-10-18 04:54:05</sys_updated_on><sys_update_name>sys_app_module_25059917997758528b05ae1fbc9022dc</sys_update_name><sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package><sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope></sys_app_module></record_update>]]></payload>
+        <payload_hash>946036981</payload_hash>
+        <record_name>Properties</record_name>
+        <reverted_from/>
+        <source>7e87f6c6c348db10d979171ed40131c1</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-22 03:53:13</sys_created_on>
+        <sys_id>03873ac6c348db10d979171ed4013143</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>1a161bdd6940000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-22 03:53:13</sys_updated_on>
+        <type>Module</type>
+        <update_guid>08bcdba6109140b6be10f7a931584607</update_guid>
+        <update_guid_history>08bcdba6109140b6be10f7a931584607:946036981</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="Properties">b5327d83c3585310d979171ed401315b</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 11:39:56</sys_created_on>
+        <sys_db_object display_value="" name="sys_app_module">sys_app_module</sys_db_object>
+        <sys_id>0dc1a2c7ec8549408452f19620f89000</sys_id>
+        <sys_metadata>25059917997758528b05ae1fbc9022dc</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Properties</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_scope_delete display_value="">14f454919bb24c50962b0ac1f1c00440</sys_scope_delete>
+        <sys_update_name>sys_app_module_25059917997758528b05ae1fbc9022dc</sys_update_name>
+        <sys_update_version display_value="sys_app_module_25059917997758528b05ae1fbc9022dc">03873ac6c348db10d979171ed4013143</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 11:39:56</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

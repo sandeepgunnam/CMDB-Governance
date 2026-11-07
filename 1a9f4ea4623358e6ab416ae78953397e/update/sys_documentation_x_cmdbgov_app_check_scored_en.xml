@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_documentation element="scored" label="Scored" language="en" table="x_cmdbgov_app_check">
+        <sys_documentation action="INSERT_OR_UPDATE">
+            <element>scored</element>
+            <help/>
+            <hint>When false the check is evaluated and reported but excluded from pillar scoring.</hint>
+            <label>Scored</label>
+            <language>en</language>
+            <name>x_cmdbgov_app_check</name>
+            <plural>Scored</plural>
+            <sys_class_name>sys_documentation</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-06 04:59:58</sys_created_on>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>Scored</sys_name>
+            <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+            <sys_update_name>sys_documentation_x_cmdbgov_app_check_scored_en</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-06 04:59:58</sys_updated_on>
+            <url/>
+            <url_target/>
+        </sys_documentation>
+    </sys_documentation>
+</record_update>

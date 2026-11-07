@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="DELETE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_cmdbgov_app.CMDBGovDataSource</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description>Read-only data access: local GlideRecord/GlideAggregate or a remote instance over REST (Basic or OAuth 2.0).</description>
+        <mobile_callable>false</mobile_callable>
+        <name>CMDBGovDataSource</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script>/**
+ * CMDBGovDataSource
+ * Read-only data access for the CMDB Governance engine.
+ *
+ *  - "local"  mode reads this instance with GlideRecord / GlideAggregate.
+ *  - "remote" mode reads another instance through the REST Table API and
+ *             Aggregate (stats) API, authenticating with either a
+ *             Basic Auth profile or an OAuth 2.0 profile.
+ *
+ * Every method is read-only. Nothing is ever written to the CMDB.
+ *
+ * Scope: x_cmdbgov_app   Access: This application scope only
+ */
+var CMDBGovDataSource = Class.create();
+
+CMDBGovDataSource.prototype = {
+
+    /**
+     * @param {Object} config  result of new CMDBGovConfig().get()
+     */
+    initialize: function(config) {
+        this.cfg = config || new CMDBGovConfig().get();
+        this.mode = this.cfg.dataSource;
+        this._tableCache = {};
+        this._fieldCache = {};
+        this._labelCache = {};
+        if (this.mode === 'remote') {
+            if (!this.cfg.remoteUrl)
+                throw new Error('Remote mode is selected but x_cmdbgov_app.remote.instance_url is empty.');
+            if (!this.cfg.authProfile)
+                throw new Error('Remote mode is selected but x_cmdbgov_app.remote.auth_profile is empty.');
+        }
+    },
+
+    /* ------------------------------------------------------------------ */
+    /*  Public API                                                         */
+    /* ------------------------------------------------------------------ */
+
+    describe: function() {
+        return {
+            mode: this.mode,
+            instance: this.instanceUrl(),
+            authType: this.mode === 'remote' ? this.cfg.authType : 'session'
+        };
+    },
+
+    /** Base URL used to build "open in ServiceNow" links. Always ends with "/". */
+    instanceUrl: function() {
+        if (this.mode === 'remote')
+            return this.cfg.remoteUrl + '/';
+        var uri = gs.getProperty('glide.servlet.uri', '/');
+        return uri.charAt(uri.length - 1) === '/' ? uri : uri + '/';
+    },
+
+    tableExists: function(table) {
+        if (this._tableCache.hasOwnProperty(table))
+            return this._tableCache[table];
+        var exists = this.mode === 'remote' ? this._remoteTableExists(table) : this._localTableExists(table);
+        this._tableCache[table] = exists;
+        return exists;
+    },
+
+    fieldExists: function(table, field) {
+        var key = table + '.' + field;
+        if (this._fieldCache.hasOwnProperty(key))
+            return this._fieldCache[key];
+        var exists = false;
+        if (this.tableExists(table))
+            exists = this.mode === 'remote' ? this._remoteFieldExists(table, field) : this._localFieldExists(table, field);
+        this._fieldCache[key] = exists;
+        return exists;
+    },
+
+    tableLabel: function(table) {
+        if (this._labelCache.hasOwnProperty(table))
+            return this._labelCache[table];
+        var label = table;
+        try {
+            label = this.mode === 'remote' ? this._remoteTableLabel(table) : this._localTableLabel(table);
+        } catch (e) {
+            label = table;
+        }
+        this._labelCache[table] = label || table;
+        return this._labelCache[table];
+    },
+
+    /** Number of records matching an encoded query. */
+    count: function(table, query) {
+        return this.mode === 'remote' ? this._remoteCount(table, query) : this._localCount(table, query);
+    },
+
+    /**
+     * Group records by a field and return groups whose count is &gt;= minCount.
+     * @returns {Array} [{value, display, count}] sorted by count descending
+     */
+    groupCount: function(table, field, query, minCount, limit) {
+        var rows = this.mode === 'remote'
+            ? this._remoteGroupCount(table, field, query, minCount, limit)
+            : this._localGroupCount(table, field, query, minCount, limit);
+        rows.sort(function(a, b) { return b.count - a.count; });
+        return rows;
+    },
+
+    /**
+     * List records.
+     * @returns {Array} [{sys_id, &lt;field&gt;: {value, display}}]
+     */
+    list: function(table, query, fields, limit, orderByDesc) {
+        return this.mode === 'remote'
+            ? this._remoteList(table, query, fields, limit, orderByDesc)
+            : this._localList(table, query, fields, limit, orderByDesc);
+    },
+
+    /** Encoded query date literal (UTC, system format) for N days ago. */
+    daysAgo: function(days) {
+        var gdt = new GlideDateTime();
+        gdt.addDaysUTC(-days);
+        return gdt.getValue();
+    },
+
+    /** Current date/time literal (UTC, system format). */
+    now: function() {
+        return new GlideDateTime().getValue();
+    },
+
+    /* ------------------------------------------------------------------ */
+    /*  Local implementation (GlideRecord / GlideAggregate)                */
+    /* ------------------------------------------------------------------ */
+
+    _localTableExists: function(table) {
+        try {
+            return new GlideRecord(table).isValid();
+        } catch (e) {
+            return false;
+        }
+    },
+
+    _localFieldExists: function(table, field) {
+        try {
+            var gr = new GlideRecord(table);
+            return gr.isValid() &amp;&amp; gr.isValidField(field);
+        } catch (e) {
+            return false;
+        }
+    },
+
+    _localTableLabel: function(table) {
+        var gr = new GlideRecord(table);
+        return gr.isValid() ? gr.getClassDisplayValue() : table;
+    },
+
+    _localCount: function(table, query) {
+        var ga = new GlideAggregate(table);
+        if (query)
+            ga.addEncodedQuery(query);
+        ga.addAggregate('COUNT');
+        ga.query();
+        return ga.next() ? parseInt(ga.getAggregate('COUNT'), 10) || 0 : 0;
+    },
+
+    _localGroupCount: function(table, field, query, minCount, limit) {
+        var ga = new GlideAggregate(table);
+        if (query)
+            ga.addEncodedQuery(query);
+        ga.addAggregate('COUNT', field);
+        ga.groupBy(field);
+        if (minCount &amp;&amp; minCount &gt; 1)
+            ga.addHaving('COUNT', '&gt;', String(minCount - 1));
+        ga.query();
+        var rows = [];
+        while (ga.next() &amp;&amp; rows.length &lt; (limit || 500)) {
+            rows.push({
+                value: ga.getValue(field),
+                display: ga.getDisplayValue(field) || ga.getValue(field),
+                count: parseInt(ga.getAggregate('COUNT', field), 10) || 0
+            });
+        }
+        return rows;
+    },
+
+    _localList: function(table, query, fields, limit, orderByDesc) {
+        var gr = new GlideRecord(table);
+        if (query)
+            gr.addEncodedQuery(query);
+        if (orderByDesc)
+            gr.orderByDesc(orderByDesc);
+        gr.setLimit(limit || 100);
+        gr.query();
+        var rows = [];
+        while (gr.next()) {
+            var row = { sys_id: gr.getUniqueValue() };
+            for (var i = 0; i &lt; fields.length; i++) {
+                var f = fields[i];
+                if (f === 'sys_id' || !gr.isValidField(f))
+                    continue;
+                row[f] = { value: gr.getValue(f) || '', display: gr.getDisplayValue(f) || '' };
+            }
+            rows.push(row);
+        }
+        return rows;
+    },
+
+    /* ------------------------------------------------------------------ */
+    /*  Remote implementation (REST Table API + Aggregate API)             */
+    /* ------------------------------------------------------------------ */
+
+    _rest: function(path, params, allowFailure) {
+        var r = new sn_ws.RESTMessageV2();
+        r.setHttpMethod('get');
+        r.setEndpoint(this.cfg.remoteUrl + path);
+        r.setRequestHeader('Accept', 'application/json');
+        r.setAuthenticationProfile(this.cfg.authType, this.cfg.authProfile);
+        r.setHttpTimeout(120000);
+        for (var k in params) {
+            if (params.hasOwnProperty(k) &amp;&amp; params[k] !== undefined &amp;&amp; params[k] !== null &amp;&amp; params[k] !== '')
+                r.setQueryParameter(k, String(params[k]));
+        }
+        var resp = r.execute();
+        var code = resp.getStatusCode();
+        if (code &lt; 200 || code &gt;= 300) {
+            if (allowFailure)
+                return null;
+            var body = String(resp.getBody() || resp.getErrorMessage() || '');
+            throw new Error('Remote instance returned HTTP ' + code + ' for ' + path + ': ' + body.substring(0, 300));
+        }
+        return JSON.parse(resp.getBody());
+    },
+
+    _remoteTableExists: function(table) {
+        var res = this._rest('/api/now/table/' + table, { sysparm_limit: 1, sysparm_fields: 'sys_id' }, true);
+        return res !== null;
+    },
+
+    _remoteFieldExists: function(table, field) {
+        var sampleKey = '__sample__' + table;
+        if (!this._fieldCache.hasOwnProperty(sampleKey)) {
+            var res = this._rest('/api/now/table/' + table, { sysparm_limit: 1, sysparm_exclude_reference_link: 'true' }, true);
+            this._fieldCache[sampleKey] = (res &amp;&amp; res.result &amp;&amp; res.result.length) ? res.result[0] : null;
+        }
+        var sample = this._fieldCache[sampleKey];
+        // No records to inspect: treat as present; queries against an empty table return 0 anyway.
+        return sample === null ? true : sample.hasOwnProperty(field);
+    },
+
+    _remoteTableLabel: function(table) {
+        var res = this._rest('/api/now/table/sys_db_object', {
+            sysparm_query: 'name=' + table,
+            sysparm_fields: 'label',
+            sysparm_limit: 1
+        }, true);
+        return (res &amp;&amp; res.result &amp;&amp; res.result.length) ? res.result[0].label : table;
+    },
+
+    _remoteCount: function(table, query) {
+        var res = this._rest('/api/now/stats/' + table, { sysparm_count: 'true', sysparm_query: query || '' });
+        return parseInt(res.result.stats.count, 10) || 0;
+    },
+
+    _remoteGroupCount: function(table, field, query, minCount, limit) {
+        var params = {
+            sysparm_count: 'true',
+            sysparm_query: query || '',
+            sysparm_group_by: field,
+            sysparm_display_value: 'all'
+        };
+        if (minCount &amp;&amp; minCount &gt; 1)
+            params.sysparm_having = 'count^' + field + '^&gt;^' + (minCount - 1);
+        var res = this._rest('/api/now/stats/' + table, params);
+        var groups = res.result || [];
+        if (!(groups instanceof Array))
+            groups = [groups];
+        var rows = [];
+        for (var i = 0; i &lt; groups.length &amp;&amp; rows.length &lt; (limit || 500); i++) {
+            var g = groups[i];
+            var gf = (g.groupby_fields &amp;&amp; g.groupby_fields.length) ? g.groupby_fields[0] : {};
+            rows.push({
+                value: gf.value || '',
+                display: gf.display_value || gf.value || '',
+                count: parseInt(g.stats.count, 10) || 0
+            });
+        }
+        return rows;
+    },
+
+    _remoteList: function(table, query, fields, limit, orderByDesc) {
+        var q = query || '';
+        if (orderByDesc)
+            q += (q ? '^' : '') + 'ORDERBYDESC' + orderByDesc;
+        var res = this._rest('/api/now/table/' + table, {
+            sysparm_query: q,
+            sysparm_fields: ['sys_id'].concat(fields).join(','),
+            sysparm_limit: limit || 100,
+            sysparm_display_value: 'all',
+            sysparm_exclude_reference_link: 'true'
+        });
+        var rows = [];
+        var result = res.result || [];
+        for (var i = 0; i &lt; result.length; i++) {
+            var rec = result[i];
+            var sid = rec.sys_id;
+            var row = { sys_id: (sid &amp;&amp; typeof sid === 'object') ? sid.value : sid };
+            for (var j = 0; j &lt; fields.length; j++) {
+                var f = fields[j];
+                if (f === 'sys_id' || !rec.hasOwnProperty(f))
+                    continue;
+                var v = rec[f];
+                if (v &amp;&amp; typeof v === 'object')
+                    row[f] = { value: v.value || '', display: v.display_value || v.value || '' };
+                else
+                    row[f] = { value: v || '', display: v || '' };
+            }
+            rows.push(row);
+        }
+        return rows;
+    },
+
+    type: 'CMDBGovDataSource'
+};
+</script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-18 04:54:05</sys_created_on>
+        <sys_id>863962a0e3685fe294ae6a76d69c976e</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
+        <sys_update_name>sys_script_include_863962a0e3685fe294ae6a76d69c976e</sys_update_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+    </sys_script_include>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</application>
+        <file_path/>
+        <instance_id>995b017adb8e31502f082a5913961940</instance_id>
+        <instance_name>dev194453</instance_name>
+        <merge_base/>
+        <name>sys_script_include_863962a0e3685fe294ae6a76d69c976e</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include"><sys_script_include action="INSERT_OR_UPDATE"><access>package_private</access><active>true</active><api_name>x_cmdbgov_app.CMDBGovDataSource</api_name><caller_access/><client_callable>false</client_callable><description>Read-only data access: local GlideRecord/GlideAggregate or a remote instance over REST (Basic or OAuth 2.0).</description><mobile_callable>false</mobile_callable><name>CMDBGovDataSource</name><sandbox_callable>false</sandbox_callable><script>/**
+ * CMDBGovDataSource
+ * Read-only data access for the CMDB Governance engine.
+ *
+ *  - "local"  mode reads this instance with GlideRecord / GlideAggregate.
+ *  - "remote" mode reads another instance through the REST Table API and
+ *             Aggregate (stats) API, authenticating with either a
+ *             Basic Auth profile or an OAuth 2.0 profile.
+ *
+ * Every method is read-only. Nothing is ever written to the CMDB.
+ *
+ * Scope: x_cmdbgov_app   Access: This application scope only
+ */
+var CMDBGovDataSource = Class.create();
+
+CMDBGovDataSource.prototype = {
+
+    /**
+     * @param {Object} config  result of new CMDBGovConfig().get()
+     */
+    initialize: function(config) {
+        this.cfg = config || new CMDBGovConfig().get();
+        this.mode = this.cfg.dataSource;
+        this._tableCache = {};
+        this._fieldCache = {};
+        this._labelCache = {};
+        if (this.mode === 'remote') {
+            if (!this.cfg.remoteUrl)
+                throw new Error('Remote mode is selected but x_cmdbgov_app.remote.instance_url is empty.');
+            if (!this.cfg.authProfile)
+                throw new Error('Remote mode is selected but x_cmdbgov_app.remote.auth_profile is empty.');
+        }
+    },
+
+    /* ------------------------------------------------------------------ */
+    /*  Public API                                                         */
+    /* ------------------------------------------------------------------ */
+
+    describe: function() {
+        return {
+            mode: this.mode,
+            instance: this.instanceUrl(),
+            authType: this.mode === 'remote' ? this.cfg.authType : 'session'
+        };
+    },
+
+    /** Base URL used to build "open in ServiceNow" links. Always ends with "/". */
+    instanceUrl: function() {
+        if (this.mode === 'remote')
+            return this.cfg.remoteUrl + '/';
+        var uri = gs.getProperty('glide.servlet.uri', '/');
+        return uri.charAt(uri.length - 1) === '/' ? uri : uri + '/';
+    },
+
+    tableExists: function(table) {
+        if (this._tableCache.hasOwnProperty(table))
+            return this._tableCache[table];
+        var exists = this.mode === 'remote' ? this._remoteTableExists(table) : this._localTableExists(table);
+        this._tableCache[table] = exists;
+        return exists;
+    },
+
+    fieldExists: function(table, field) {
+        var key = table + '.' + field;
+        if (this._fieldCache.hasOwnProperty(key))
+            return this._fieldCache[key];
+        var exists = false;
+        if (this.tableExists(table))
+            exists = this.mode === 'remote' ? this._remoteFieldExists(table, field) : this._localFieldExists(table, field);
+        this._fieldCache[key] = exists;
+        return exists;
+    },
+
+    tableLabel: function(table) {
+        if (this._labelCache.hasOwnProperty(table))
+            return this._labelCache[table];
+        var label = table;
+        try {
+            label = this.mode === 'remote' ? this._remoteTableLabel(table) : this._localTableLabel(table);
+        } catch (e) {
+            label = table;
+        }
+        this._labelCache[table] = label || table;
+        return this._labelCache[table];
+    },
+
+    /** Number of records matching an encoded query. */
+    count: function(table, query) {
+        return this.mode === 'remote' ? this._remoteCount(table, query) : this._localCount(table, query);
+    },
+
+    /**
+     * Group records by a field and return groups whose count is &gt;= minCount.
+     * @returns {Array} [{value, display, count}] sorted by count descending
+     */
+    groupCount: function(table, field, query, minCount, limit) {
+        var rows = this.mode === 'remote'
+            ? this._remoteGroupCount(table, field, query, minCount, limit)
+            : this._localGroupCount(table, field, query, minCount, limit);
+        rows.sort(function(a, b) { return b.count - a.count; });
+        return rows;
+    },
+
+    /**
+     * List records.
+     * @returns {Array} [{sys_id, &lt;field&gt;: {value, display}}]
+     */
+    list: function(table, query, fields, limit, orderByDesc) {
+        return this.mode === 'remote'
+            ? this._remoteList(table, query, fields, limit, orderByDesc)
+            : this._localList(table, query, fields, limit, orderByDesc);
+    },
+
+    /** Encoded query date literal (UTC, system format) for N days ago. */
+    daysAgo: function(days) {
+        var gdt = new GlideDateTime();
+        gdt.addDaysUTC(-days);
+        return gdt.getValue();
+    },
+
+    /** Current date/time literal (UTC, system format). */
+    now: function() {
+        return new GlideDateTime().getValue();
+    },
+
+    /* ------------------------------------------------------------------ */
+    /*  Local implementation (GlideRecord / GlideAggregate)                */
+    /* ------------------------------------------------------------------ */
+
+    _localTableExists: function(table) {
+        try {
+            return new GlideRecord(table).isValid();
+        } catch (e) {
+            return false;
+        }
+    },
+
+    _localFieldExists: function(table, field) {
+        try {
+            var gr = new GlideRecord(table);
+            return gr.isValid() &amp;&amp; gr.isValidField(field);
+        } catch (e) {
+            return false;
+        }
+    },
+
+    _localTableLabel: function(table) {
+        var gr = new GlideRecord(table);
+        return gr.isValid() ? gr.getClassDisplayValue() : table;
+    },
+
+    _localCount: function(table, query) {
+        var ga = new GlideAggregate(table);
+        if (query)
+            ga.addEncodedQuery(query);
+        ga.addAggregate('COUNT');
+        ga.query();
+        return ga.next() ? parseInt(ga.getAggregate('COUNT'), 10) || 0 : 0;
+    },
+
+    _localGroupCount: function(table, field, query, minCount, limit) {
+        var ga = new GlideAggregate(table);
+        if (query)
+            ga.addEncodedQuery(query);
+        ga.addAggregate('COUNT', field);
+        ga.groupBy(field);
+        if (minCount &amp;&amp; minCount &gt; 1)
+            ga.addHaving('COUNT', '&gt;', String(minCount - 1));
+        ga.query();
+        var rows = [];
+        while (ga.next() &amp;&amp; rows.length &lt; (limit || 500)) {
+            rows.push({
+                value: ga.getValue(field),
+                display: ga.getDisplayValue(field) || ga.getValue(field),
+                count: parseInt(ga.getAggregate('COUNT', field), 10) || 0
+            });
+        }
+        return rows;
+    },
+
+    _localList: function(table, query, fields, limit, orderByDesc) {
+        var gr = new GlideRecord(table);
+        if (query)
+            gr.addEncodedQuery(query);
+        if (orderByDesc)
+            gr.orderByDesc(orderByDesc);
+        gr.setLimit(limit || 100);
+        gr.query();
+        var rows = [];
+        while (gr.next()) {
+            var row = { sys_id: gr.getUniqueValue() };
+            for (var i = 0; i &lt; fields.length; i++) {
+                var f = fields[i];
+                if (f === 'sys_id' || !gr.isValidField(f))
+                    continue;
+                row[f] = { value: gr.getValue(f) || '', display: gr.getDisplayValue(f) || '' };
+            }
+            rows.push(row);
+        }
+        return rows;
+    },
+
+    /* ------------------------------------------------------------------ */
+    /*  Remote implementation (REST Table API + Aggregate API)             */
+    /* ------------------------------------------------------------------ */
+
+    _rest: function(path, params, allowFailure) {
+        var r = new sn_ws.RESTMessageV2();
+        r.setHttpMethod('get');
+        r.setEndpoint(this.cfg.remoteUrl + path);
+        r.setRequestHeader('Accept', 'application/json');
+        r.setAuthenticationProfile(this.cfg.authType, this.cfg.authProfile);
+        r.setHttpTimeout(120000);
+        for (var k in params) {
+            if (params.hasOwnProperty(k) &amp;&amp; params[k] !== undefined &amp;&amp; params[k] !== null &amp;&amp; params[k] !== '')
+                r.setQueryParameter(k, String(params[k]));
+        }
+        var resp = r.execute();
+        var code = resp.getStatusCode();
+        if (code &lt; 200 || code &gt;= 300) {
+            if (allowFailure)
+                return null;
+            var body = String(resp.getBody() || resp.getErrorMessage() || '');
+            throw new Error('Remote instance returned HTTP ' + code + ' for ' + path + ': ' + body.substring(0, 300));
+        }
+        return JSON.parse(resp.getBody());
+    },
+
+    _remoteTableExists: function(table) {
+        var res = this._rest('/api/now/table/' + table, { sysparm_limit: 1, sysparm_fields: 'sys_id' }, true);
+        return res !== null;
+    },
+
+    _remoteFieldExists: function(table, field) {
+        var sampleKey = '__sample__' + table;
+        if (!this._fieldCache.hasOwnProperty(sampleKey)) {
+            var res = this._rest('/api/now/table/' + table, { sysparm_limit: 1, sysparm_exclude_reference_link: 'true' }, true);
+            this._fieldCache[sampleKey] = (res &amp;&amp; res.result &amp;&amp; res.result.length) ? res.result[0] : null;
+        }
+        var sample = this._fieldCache[sampleKey];
+        // No records to inspect: treat as present; queries against an empty table return 0 anyway.
+        return sample === null ? true : sample.hasOwnProperty(field);
+    },
+
+    _remoteTableLabel: function(table) {
+        var res = this._rest('/api/now/table/sys_db_object', {
+            sysparm_query: 'name=' + table,
+            sysparm_fields: 'label',
+            sysparm_limit: 1
+        }, true);
+        return (res &amp;&amp; res.result &amp;&amp; res.result.length) ? res.result[0].label : table;
+    },
+
+    _remoteCount: function(table, query) {
+        var res = this._rest('/api/now/stats/' + table, { sysparm_count: 'true', sysparm_query: query || '' });
+        return parseInt(res.result.stats.count, 10) || 0;
+    },
+
+    _remoteGroupCount: function(table, field, query, minCount, limit) {
+        var params = {
+            sysparm_count: 'true',
+            sysparm_query: query || '',
+            sysparm_group_by: field,
+            sysparm_display_value: 'all'
+        };
+        if (minCount &amp;&amp; minCount &gt; 1)
+            params.sysparm_having = 'count^' + field + '^&gt;^' + (minCount - 1);
+        var res = this._rest('/api/now/stats/' + table, params);
+        var groups = res.result || [];
+        if (!(groups instanceof Array))
+            groups = [groups];
+        var rows = [];
+        for (var i = 0; i &lt; groups.length &amp;&amp; rows.length &lt; (limit || 500); i++) {
+            var g = groups[i];
+            var gf = (g.groupby_fields &amp;&amp; g.groupby_fields.length) ? g.groupby_fields[0] : {};
+            rows.push({
+                value: gf.value || '',
+                display: gf.display_value || gf.value || '',
+                count: parseInt(g.stats.count, 10) || 0
+            });
+        }
+        return rows;
+    },
+
+    _remoteList: function(table, query, fields, limit, orderByDesc) {
+        var q = query || '';
+        if (orderByDesc)
+            q += (q ? '^' : '') + 'ORDERBYDESC' + orderByDesc;
+        var res = this._rest('/api/now/table/' + table, {
+            sysparm_query: q,
+            sysparm_fields: ['sys_id'].concat(fields).join(','),
+            sysparm_limit: limit || 100,
+            sysparm_display_value: 'all',
+            sysparm_exclude_reference_link: 'true'
+        });
+        var rows = [];
+        var result = res.result || [];
+        for (var i = 0; i &lt; result.length; i++) {
+            var rec = result[i];
+            var sid = rec.sys_id;
+            var row = { sys_id: (sid &amp;&amp; typeof sid === 'object') ? sid.value : sid };
+            for (var j = 0; j &lt; fields.length; j++) {
+                var f = fields[j];
+                if (f === 'sys_id' || !rec.hasOwnProperty(f))
+                    continue;
+                var v = rec[f];
+                if (v &amp;&amp; typeof v === 'object')
+                    row[f] = { value: v.value || '', display: v.display_value || v.value || '' };
+                else
+                    row[f] = { value: v || '', display: v || '' };
+            }
+            rows.push(row);
+        }
+        return rows;
+    },
+
+    type: 'CMDBGovDataSource'
+};
+</script><sys_class_name>sys_script_include</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2026-10-18 04:54:05</sys_created_on><sys_id>863962a0e3685fe294ae6a76d69c976e</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-10-18 04:54:05</sys_updated_on><sys_update_name>sys_script_include_863962a0e3685fe294ae6a76d69c976e</sys_update_name><sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package><sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope></sys_script_include></record_update>]]></payload>
+        <payload_hash>-1800889785</payload_hash>
+        <record_name>CMDBGovDataSource</record_name>
+        <reverted_from/>
+        <source>7e87f6c6c348db10d979171ed40131c1</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-22 03:53:14</sys_created_on>
+        <sys_id>1f873ac6c348db10d979171ed4013194</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>1a161bddb3f0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-22 03:53:14</sys_updated_on>
+        <type>Script Include</type>
+        <update_guid>914cbe8aebf1424492ba59391c7a47df</update_guid>
+        <update_guid_history>914cbe8aebf1424492ba59391c7a47df:-1800889785</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 11:08:13</sys_created_on>
+        <sys_db_object display_value="" name="sys_script_include">sys_script_include</sys_db_object>
+        <sys_id>64722774ef734fae9d8a788556a3ac64</sys_id>
+        <sys_metadata>863962a0e3685fe294ae6a76d69c976e</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>CMDBGovDataSource</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_scope_delete display_value="">14f454919bb24c50962b0ac1f1c00440</sys_scope_delete>
+        <sys_update_name>sys_script_include_863962a0e3685fe294ae6a76d69c976e</sys_update_name>
+        <sys_update_version display_value="sys_script_include_863962a0e3685fe294ae6a76d69c976e">1f873ac6c348db10d979171ed4013194</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 11:08:13</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

@@ -1,24 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_properties">
     <sys_properties action="INSERT_OR_UPDATE">
         <choices/>
-        <description>Encoded query applied to every class to define the governed population. Default excludes retired CIs.</description>
+        <description>Encoded query applied to every governed class before any check runs.</description>
         <ignore_cache>false</ignore_cache>
         <is_private>false</is_private>
         <name>x_cmdbgov_app.scope_query</name>
-        <read_roles/>
+        <read_roles>x_cmdbgov_app.viewer</read_roles>
         <suffix>scope_query</suffix>
-        <type>string</type>
-        <value>install_status!=7</value>
-        <write_roles>x_cmdbgov_app.admin</write_roles>
         <sys_class_name>sys_properties</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-10-18 04:54:05</sys_created_on>
         <sys_id>f17cc31e63bd5c359cb1d44d3edb28f6</sys_id>
         <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_cmdbgov_app.scope_query</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_properties_f17cc31e63bd5c359cb1d44d3edb28f6</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
         <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
-        <sys_update_name>sys_properties_f17cc31e63bd5c359cb1d44d3edb28f6</sys_update_name>
-        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
-        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <type>string</type>
+        <value>install_status!=7</value>
+        <write_roles>x_cmdbgov_app.admin</write_roles>
     </sys_properties>
+    <sys_translated_text action="delete_multiple" query="documentkey=f17cc31e63bd5c359cb1d44d3edb28f6"/>
 </record_update>

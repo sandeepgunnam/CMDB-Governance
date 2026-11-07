@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_ui_section caption="Assessment Run" section_id="58288628cebd41d5b9e99d268470cdc6" sys_domain="global" table="x_cmdbgov_app_run" version="3" view="">
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.begin_split</element>
+            <position>0</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>a8c055dbeee14991a3bd641c3074ad9e</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type>.begin_split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>number</element>
+            <position>1</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>823d03d6554e4fe9baa199da450bdaad</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>connection</element>
+            <position>2</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>5ecf707506da4127b6a93bb85d3cb744</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>state</element>
+            <position>3</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>2a45c5181b254174ac9dece35145a54c</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>started</element>
+            <position>4</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>31ccbddfa01f4386af632244bf147589</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>completed</element>
+            <position>5</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>9f55542c410645249830992573e5f97b</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>duration_seconds</element>
+            <position>6</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>2f87a693622645b4838a04f1cce13ed5</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>total_cis</element>
+            <position>7</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>3ff87fd853ae4a4996b1e1f150269f4e</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>governed_classes</element>
+            <position>8</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>5d9e2a285f7b47d5b261a13376a2e178</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.split</element>
+            <position>9</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>ca5a4ab24c214d4e840dc56fff355883</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type>.split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>overall_score</element>
+            <position>10</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>2cc83741dfe549efaa80d97a35743833</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>ownership_score</element>
+            <position>11</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>c352906a4dca4667950548ee23763971</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>quality_score</element>
+            <position>12</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>3a893ac933494e339a6eb478934e937b</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>relationships_score</element>
+            <position>13</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>6e9fcf8cdced4c47a11a8fb40f7edfce</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>lifecycle_score</element>
+            <position>14</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>bc81bbfc495d4109ae9e58eace4e8c33</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.end_split</element>
+            <position>15</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>3deb2e0de6a144268cb52b5f3097008a</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type>.end_split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>warnings</element>
+            <position>16</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>753867011fe84eaaba7a68d5d717c649</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>error_message</element>
+            <position>17</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:52</sys_created_on>
+            <sys_id>9306c833b3194bae99ff59299e52dc92</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:52</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_section action="INSERT_OR_UPDATE">
+            <caption>Assessment Run</caption>
+            <header>false</header>
+            <name>x_cmdbgov_app_run</name>
+            <roles/>
+            <sys_class_name>sys_ui_section</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-06 05:03:21</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>58288628cebd41d5b9e99d268470cdc6</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>x_cmdbgov_app_run</sys_name>
+            <sys_overrides/>
+            <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+            <sys_update_name>sys_ui_section_58288628cebd41d5b9e99d268470cdc6</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-06 05:03:21</sys_updated_on>
+            <sys_user/>
+            <title>false</title>
+            <view display_value="Default view" name="NULL">Default view</view>
+            <view_name/>
+        </sys_ui_section>
+    </sys_ui_section>
+</record_update>

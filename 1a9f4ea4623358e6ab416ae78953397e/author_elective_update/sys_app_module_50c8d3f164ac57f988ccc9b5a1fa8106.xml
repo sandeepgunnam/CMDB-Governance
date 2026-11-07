@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_app_module">
+    <sys_app_module action="DELETE">
+        <active>true</active>
+        <application display_value="CMDB Governance">6a449ae2014d50efb9ddce75c46c914a</application>
+        <device_type>browser</device_type>
+        <hint/>
+        <link_type>DIRECT</link_type>
+        <order>100</order>
+        <override_menu_roles>false</override_menu_roles>
+        <query>x_cmdbgov_app_governance.do</query>
+        <roles>x_cmdbgov_app.viewer</roles>
+        <title>Governance Dashboard</title>
+        <window_name/>
+        <sys_class_name>sys_app_module</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-18 04:54:05</sys_created_on>
+        <sys_id>50c8d3f164ac57f988ccc9b5a1fa8106</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
+        <sys_update_name>sys_app_module_50c8d3f164ac57f988ccc9b5a1fa8106</sys_update_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+    </sys_app_module>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</application>
+        <file_path/>
+        <instance_id>995b017adb8e31502f082a5913961940</instance_id>
+        <instance_name>dev194453</instance_name>
+        <merge_base/>
+        <name>sys_app_module_50c8d3f164ac57f988ccc9b5a1fa8106</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_app_module"><sys_app_module action="INSERT_OR_UPDATE"><active>true</active><application display_value="CMDB Governance">6a449ae2014d50efb9ddce75c46c914a</application><device_type>browser</device_type><hint/><link_type>DIRECT</link_type><order>100</order><override_menu_roles>false</override_menu_roles><query>x_cmdbgov_app_governance.do</query><roles>x_cmdbgov_app.viewer</roles><title>Governance Dashboard</title><window_name/><sys_class_name>sys_app_module</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2026-10-18 04:54:05</sys_created_on><sys_id>50c8d3f164ac57f988ccc9b5a1fa8106</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-10-18 04:54:05</sys_updated_on><sys_update_name>sys_app_module_50c8d3f164ac57f988ccc9b5a1fa8106</sys_update_name><sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package><sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope></sys_app_module></record_update>]]></payload>
+        <payload_hash>352451021</payload_hash>
+        <record_name>Governance Dashboard</record_name>
+        <reverted_from/>
+        <source>7e87f6c6c348db10d979171ed40131c1</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-22 03:53:13</sys_created_on>
+        <sys_id>8b873ac6c348db10d979171ed4013146</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>1a161bdd6aa0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-22 03:53:13</sys_updated_on>
+        <type>Module</type>
+        <update_guid>6cd20482350f465c8b747395a430b1fd</update_guid>
+        <update_guid_history>6cd20482350f465c8b747395a430b1fd:352451021</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="Governance Dashboard">2932fdc7c3d45310d979171ed4013199</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 11:39:56</sys_created_on>
+        <sys_db_object display_value="" name="sys_app_module">sys_app_module</sys_db_object>
+        <sys_id>497126f4101641b4a72809306318f890</sys_id>
+        <sys_metadata>50c8d3f164ac57f988ccc9b5a1fa8106</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Governance Dashboard</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_scope_delete display_value="">14f454919bb24c50962b0ac1f1c00440</sys_scope_delete>
+        <sys_update_name>sys_app_module_50c8d3f164ac57f988ccc9b5a1fa8106</sys_update_name>
+        <sys_update_version display_value="sys_app_module_50c8d3f164ac57f988ccc9b5a1fa8106">8b873ac6c348db10d979171ed4013146</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 11:39:56</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="2fb5a441bb5b453f915124fdb2dc781d" label="Check Result" name="x_cmdbgov_app_result" type="collection">
+        <element label="List URL" max_length="1024" name="list_url" type="url"/>
+        <element label="Check" name="check" reference="x_cmdbgov_app_check" reference_cascade_rule="none" type="reference"/>
+        <element label="CI class" max_length="80" name="ci_class" type="table_name"/>
+        <element hint="Populated for completeness checks only." label="Field name" max_length="80" name="field_name" type="string"/>
+        <element choice="3" default="ok" label="Status" max_length="40" name="status" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="OK" sequence="1" value="ok"/>
+                <element inactive_on_update="false" label="Not applicable" sequence="2" value="not_applicable"/>
+                <element inactive_on_update="false" label="Error" sequence="3" value="error"/>
+            </choice>
+        </element>
+        <element label="Run" mandatory="true" name="run" reference="x_cmdbgov_app_run" reference_cascade_rule="delete" type="reference"/>
+        <element label="Failing" name="failing" type="integer"/>
+        <element hint="Populated for duplicates checks only." label="Group value" max_length="255" name="group_value" type="string"/>
+        <element label="Population" name="population" type="integer"/>
+        <element label="Metric value" name="metric_value" type="integer"/>
+        <element label="Error message" max_length="1000" name="error_message" type="string"/>
+        <element attributes="scale=1" hint="Percentage of the population that passed, 0-100." label="Pass rate (%)" name="pass_rate" type="decimal"/>
+        <element choice="3" label="Pillar" max_length="40" name="pillar" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Lifecycle &amp; Certification" sequence="4" value="lifecycle"/>
+                <element inactive_on_update="false" label="Data Quality" sequence="2" value="quality"/>
+                <element inactive_on_update="false" label="Ownership" sequence="1" value="ownership"/>
+                <element inactive_on_update="false" label="Relationships" sequence="3" value="relationships"/>
+            </choice>
+        </element>
+        <element label="Failing query" max_length="4000" name="failing_query" type="string"/>
+        <index name="index">
+            <element name="check"/>
+        </index>
+        <index name="index2">
+            <element name="run"/>
+            <element name="check"/>
+        </index>
+    </element>
+</database>

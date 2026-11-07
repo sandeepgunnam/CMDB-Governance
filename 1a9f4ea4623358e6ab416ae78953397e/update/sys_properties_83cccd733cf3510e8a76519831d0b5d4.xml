@@ -1,24 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_properties">
     <sys_properties action="INSERT_OR_UPDATE">
         <choices/>
-        <description>Maximum records returned in a drill-down panel.</description>
+        <description>Maximum number of failing CIs captured for drill-down per check result.</description>
         <ignore_cache>false</ignore_cache>
         <is_private>false</is_private>
         <name>x_cmdbgov_app.drilldown_limit</name>
-        <read_roles/>
+        <read_roles>x_cmdbgov_app.viewer</read_roles>
         <suffix>drilldown_limit</suffix>
-        <type>integer</type>
-        <value>100</value>
-        <write_roles>x_cmdbgov_app.admin</write_roles>
         <sys_class_name>sys_properties</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-10-18 04:54:05</sys_created_on>
         <sys_id>83cccd733cf3510e8a76519831d0b5d4</sys_id>
         <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_cmdbgov_app.drilldown_limit</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_properties_83cccd733cf3510e8a76519831d0b5d4</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
         <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
-        <sys_update_name>sys_properties_83cccd733cf3510e8a76519831d0b5d4</sys_update_name>
-        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
-        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <type>integer</type>
+        <value>100</value>
+        <write_roles>x_cmdbgov_app.admin</write_roles>
     </sys_properties>
+    <sys_translated_text action="delete_multiple" query="documentkey=83cccd733cf3510e8a76519831d0b5d4"/>
 </record_update>

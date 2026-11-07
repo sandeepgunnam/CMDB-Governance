@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_ui_form_sections form_id="7de25749ddde469f8ad300178b10d444" sys_domain="global" table="x_cmdbgov_app_run" version="3">
+        <sys_ui_form_section action="INSERT_OR_UPDATE">
+            <position>0</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:49</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>d985612ccee54051acc9deccd8bfb16e</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_overrides/>
+            <sys_ui_form display_value="x_cmdbgov_app_run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">7de25749ddde469f8ad300178b10d444</sys_ui_form>
+            <sys_ui_section caption="Assessment Run" display_value="Assessment Run" name="x_cmdbgov_app_run" sys_domain="global" view="Default view">58288628cebd41d5b9e99d268470cdc6</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:49</sys_updated_on>
+        </sys_ui_form_section>
+        <sys_ui_form action="INSERT_OR_UPDATE">
+            <name>x_cmdbgov_app_run</name>
+            <roles/>
+            <sys_class_name>sys_ui_form</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-06 05:03:15</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>7de25749ddde469f8ad300178b10d444</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>x_cmdbgov_app_run</sys_name>
+            <sys_overrides/>
+            <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+            <sys_update_name>sys_ui_form_sections_7de25749ddde469f8ad300178b10d444</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-06 05:03:15</sys_updated_on>
+            <sys_user/>
+            <view display_value="Default view" name="NULL">Default view</view>
+            <view_name/>
+        </sys_ui_form>
+    </sys_ui_form_sections>
+</record_update>

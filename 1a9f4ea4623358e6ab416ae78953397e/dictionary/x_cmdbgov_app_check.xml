@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element audit="true" db_object_id="9c6c829a68d143d7b04f9372792cf9a1" label="Governance Check" name="x_cmdbgov_app_check" type="collection">
+        <element choice="3" label="Severity" max_length="40" name="severity" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="High" sequence="1" value="high"/>
+                <element inactive_on_update="false" label="Low" sequence="3" value="low"/>
+                <element inactive_on_update="false" label="Medium" sequence="2" value="medium"/>
+            </choice>
+        </element>
+        <element hint="Comma-separated list of class name prefixes this check skips." label="Excluded class prefixes" max_length="255" name="excluded_class_prefixes" type="string"/>
+        <element hint="Stable machine key for this check, e.g. missing_owner." label="Code" mandatory="true" max_length="60" name="code" type="string" unique="true"/>
+        <element label="Order" name="order" type="integer"/>
+        <element hint="Encoded query identifying FAILING records. Supports the {STALE_DATE} and {NOW} tokens." label="Failure condition" max_length="4000" name="failure_condition" type="string"/>
+        <element hint="Table counted by metric checks." label="Metric table" max_length="80" name="metric_table" type="string"/>
+        <element label="Recommendation" max_length="1000" name="recommendation" type="string"/>
+        <element default="true" hint="When false the check is evaluated and reported but excluded from pillar scoring." label="Scored" name="scored" type="boolean"/>
+        <element label="Description" max_length="1000" name="description" type="string"/>
+        <element default="true" label="Active" name="active" type="boolean"/>
+        <element display="true" label="Name" mandatory="true" max_length="100" name="name" type="string"/>
+        <element default="name" hint="Field grouped on by duplicates checks." label="Duplicate field" max_length="80" name="duplicate_field" type="string"/>
+        <element choice="3" label="Pillar" max_length="40" name="pillar" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Relationships" sequence="3" value="relationships"/>
+                <element inactive_on_update="false" label="Data Quality" sequence="2" value="quality"/>
+                <element inactive_on_update="false" label="Lifecycle &amp; Certification" sequence="4" value="lifecycle"/>
+                <element inactive_on_update="false" label="Ownership" sequence="1" value="ownership"/>
+            </choice>
+        </element>
+        <element hint="Encoded query used when the required field does not exist on the class." label="Fallback condition" max_length="4000" name="fallback_condition" type="string"/>
+        <element choice="3" label="Check type" max_length="40" name="check_type" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Condition" sequence="1" value="condition"/>
+                <element inactive_on_update="false" label="Completeness" sequence="2" value="completeness"/>
+                <element inactive_on_update="false" label="Duplicates" sequence="3" value="duplicates"/>
+                <element inactive_on_update="false" label="Metric" sequence="4" value="metric"/>
+            </choice>
+        </element>
+        <element hint="The check applies to a class only if this field exists, or if a fallback condition is set." label="Required field" max_length="80" name="required_field" type="string"/>
+        <element default="2" hint="Relative weight of this check inside its pillar." label="Weight" name="weight" type="integer"/>
+        <index name="index" unique="true">
+            <element name="code"/>
+        </index>
+    </element>
+</database>

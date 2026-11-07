@@ -1,24 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_properties">
     <sys_properties action="INSERT_OR_UPDATE">
         <choices/>
-        <description>A CI is stale if not discovered (or, if never discovered, not updated) within this many days.</description>
+        <description>Age in days after which a CI is considered stale. Backs the {STALE_DATE} token.</description>
         <ignore_cache>false</ignore_cache>
         <is_private>false</is_private>
         <name>x_cmdbgov_app.stale_days</name>
-        <read_roles/>
+        <read_roles>x_cmdbgov_app.viewer</read_roles>
         <suffix>stale_days</suffix>
-        <type>integer</type>
-        <value>90</value>
-        <write_roles>x_cmdbgov_app.admin</write_roles>
         <sys_class_name>sys_properties</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-10-18 04:54:05</sys_created_on>
         <sys_id>91535e140d6b5c0f9977bdb52406a4c7</sys_id>
         <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_cmdbgov_app.stale_days</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_update_name>sys_properties_91535e140d6b5c0f9977bdb52406a4c7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
         <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
-        <sys_update_name>sys_properties_91535e140d6b5c0f9977bdb52406a4c7</sys_update_name>
-        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
-        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <type>integer</type>
+        <value>90</value>
+        <write_roles>x_cmdbgov_app.admin</write_roles>
     </sys_properties>
+    <sys_translated_text action="delete_multiple" query="documentkey=91535e140d6b5c0f9977bdb52406a4c7"/>
 </record_update>

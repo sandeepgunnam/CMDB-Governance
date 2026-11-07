@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_ui_section caption="Governance Connection" section_id="8b971897d759472a81221c11a0eeca33" sys_domain="global" table="x_cmdbgov_app_connection" version="3" view="">
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.begin_split</element>
+            <position>0</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>1b486844741746d4b1f5f99f3c4822c2</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type>.begin_split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>name</element>
+            <position>1</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>fcded257519441978b38386bcf428536</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>mode</element>
+            <position>2</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>d4a5b8ccb01d4f4c9436ffa46e43486b</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>instance_url</element>
+            <position>3</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>bb82a87beba04dd4af6415814217fb26</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>auth_type</element>
+            <position>4</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>8bc3dc646bf84962b45603ff3cee1ff6</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.split</element>
+            <position>5</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>650281b5ffdf4569b96cf333ade343ba</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type>.split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>basic_auth_profile</element>
+            <position>6</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>c7d2f442eda6461c9377e7bb695e08ec</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>oauth_profile</element>
+            <position>7</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>93d7105e8d0e4e659ef2c4f56485d533</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>active</element>
+            <position>8</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>fb514870e61349859452f0a19efd9f5a</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>last_tested</element>
+            <position>9</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>e68e42f265464cd7b3bfee7222025e78</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.end_split</element>
+            <position>10</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>1decec233a5c4858bbb1bdbe60f8201f</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type>.end_split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>last_test_result</element>
+            <position>11</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-07 03:27:53</sys_created_on>
+            <sys_id>54b15bfd898c42a1af2c14ac66e7e90e</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="Governance Connection" display_value="Governance Connection" name="x_cmdbgov_app_connection" sys_domain="global" view="Default view">8b971897d759472a81221c11a0eeca33</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-07 03:27:53</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_section action="INSERT_OR_UPDATE">
+            <caption>Governance Connection</caption>
+            <header>false</header>
+            <name>x_cmdbgov_app_connection</name>
+            <roles/>
+            <sys_class_name>sys_ui_section</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-06 05:03:23</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>8b971897d759472a81221c11a0eeca33</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>x_cmdbgov_app_connection</sys_name>
+            <sys_overrides/>
+            <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+            <sys_update_name>sys_ui_section_8b971897d759472a81221c11a0eeca33</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-06 05:03:23</sys_updated_on>
+            <sys_user/>
+            <title>false</title>
+            <view display_value="Default view" name="NULL">Default view</view>
+            <view_name/>
+        </sys_ui_section>
+    </sys_ui_section>
+</record_update>

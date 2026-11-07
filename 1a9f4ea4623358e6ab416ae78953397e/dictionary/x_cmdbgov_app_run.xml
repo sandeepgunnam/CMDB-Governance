@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element audit="true" db_object_id="20fcd0932b7b4bd5a045c453d2b54dd1" label="Assessment Run" name="x_cmdbgov_app_run" type="collection">
+        <element label="Warnings" max_length="4000" name="warnings" type="string"/>
+        <element choice="3" default="queued" label="State" max_length="40" name="state" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Queued" sequence="1" value="queued"/>
+                <element inactive_on_update="false" label="Complete" sequence="3" value="complete"/>
+                <element inactive_on_update="false" label="Running" sequence="2" value="running"/>
+                <element inactive_on_update="false" label="Failed" sequence="4" value="failed"/>
+            </choice>
+        </element>
+        <element label="Duration (seconds)" name="duration_seconds" type="integer"/>
+        <element label="Error message" max_length="4000" name="error_message" type="string"/>
+        <element label="Completed" name="completed" type="glide_date_time"/>
+        <element label="Total CIs" name="total_cis" type="integer"/>
+        <element label="Governed classes" name="governed_classes" type="integer"/>
+        <element attributes="scale=1" label="Relationships score" name="relationships_score" type="decimal"/>
+        <element attributes="scale=1" label="Lifecycle score" name="lifecycle_score" type="decimal"/>
+        <element attributes="scale=1" label="Ownership score" name="ownership_score" type="decimal"/>
+        <element label="Connection" name="connection" reference="x_cmdbgov_app_connection" reference_cascade_rule="none" type="reference"/>
+        <element default="javascript:global.getNextObjNumberPadded();" display="true" label="Number" max_length="40" name="number" read_only="true" read_only_option="instance_configured" type="string"/>
+        <element attributes="scale=1" label="Overall score" name="overall_score" type="decimal"/>
+        <element attributes="scale=1" label="Data quality score" name="quality_score" type="decimal"/>
+        <element label="Started" name="started" type="glide_date_time"/>
+        <index name="index">
+            <element name="connection"/>
+        </index>
+        <index name="index2">
+            <element name="state"/>
+        </index>
+    </element>
+</database>

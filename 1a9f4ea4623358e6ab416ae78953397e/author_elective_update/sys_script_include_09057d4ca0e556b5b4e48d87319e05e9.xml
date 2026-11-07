@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="DELETE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_cmdbgov_app.CMDBGovAjax</api_name>
+        <caller_access/>
+        <client_callable>true</client_callable>
+        <description>Client-callable endpoint used by the CMDB Governance dashboard.</description>
+        <mobile_callable>false</mobile_callable>
+        <name>CMDBGovAjax</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script>/**
+ * CMDBGovAjax
+ * Client-callable endpoint used by the CMDB Governance dashboard (UI page).
+ * Returns JSON strings: { ok: true, data: ... } or { ok: false, error: "..." }.
+ *
+ * Requires role x_cmdbgov_app.viewer (x_cmdbgov_app.admin contains it).
+ *
+ * Scope: x_cmdbgov_app   Client callable: true
+ */
+var CMDBGovAjax = Class.create();
+
+CMDBGovAjax.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+
+    /** Full scorecard: all pillars, per-class breakdown, top issues. */
+    getScorecard: function() {
+        return this._respond(function() {
+            return new CMDBGovEngine().scorecard();
+        });
+    },
+
+    /** Records failing one check for one class. */
+    getRecords: function() {
+        var checkId = String(this.getParameter('sysparm_check') || '');
+        var table = String(this.getParameter('sysparm_table') || '');
+        var arg = String(this.getParameter('sysparm_arg') || '');
+        return this._respond(function() {
+            return new CMDBGovEngine().records(checkId, table, arg || undefined);
+        });
+    },
+
+    /** Lightweight connection test for the Settings tab. */
+    testConnection: function() {
+        return this._respond(function() {
+            var cfg = new CMDBGovConfig().get();
+            var ds = new CMDBGovDataSource(cfg);
+            var started = new Date().getTime();
+            var n = ds.count('cmdb_ci', '');
+            return {
+                source: ds.describe(),
+                cmdbCiCount: n,
+                ms: new Date().getTime() - started
+            };
+        });
+    },
+
+    _respond: function(fn) {
+        if (!gs.hasRole('x_cmdbgov_app.viewer'))
+            return JSON.stringify({ ok: false, error: 'You need the x_cmdbgov_app.viewer role to use CMDB Governance.' });
+        try {
+            return JSON.stringify({ ok: true, data: fn() });
+        } catch (e) {
+            var m = (e &amp;&amp; e.message) ? e.message : String(e);
+            gs.error('[CMDB Governance] ' + m);
+            return JSON.stringify({ ok: false, error: m });
+        }
+    },
+
+    type: 'CMDBGovAjax'
+});
+</script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-18 04:54:05</sys_created_on>
+        <sys_id>09057d4ca0e556b5b4e48d87319e05e9</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-18 04:54:05</sys_updated_on>
+        <sys_update_name>sys_script_include_09057d4ca0e556b5b4e48d87319e05e9</sys_update_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+    </sys_script_include>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</application>
+        <file_path/>
+        <instance_id>995b017adb8e31502f082a5913961940</instance_id>
+        <instance_name>dev194453</instance_name>
+        <merge_base/>
+        <name>sys_script_include_09057d4ca0e556b5b4e48d87319e05e9</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include"><sys_script_include action="INSERT_OR_UPDATE"><access>package_private</access><active>true</active><api_name>x_cmdbgov_app.CMDBGovAjax</api_name><caller_access/><client_callable>true</client_callable><description>Client-callable endpoint used by the CMDB Governance dashboard.</description><mobile_callable>false</mobile_callable><name>CMDBGovAjax</name><sandbox_callable>false</sandbox_callable><script>/**
+ * CMDBGovAjax
+ * Client-callable endpoint used by the CMDB Governance dashboard (UI page).
+ * Returns JSON strings: { ok: true, data: ... } or { ok: false, error: "..." }.
+ *
+ * Requires role x_cmdbgov_app.viewer (x_cmdbgov_app.admin contains it).
+ *
+ * Scope: x_cmdbgov_app   Client callable: true
+ */
+var CMDBGovAjax = Class.create();
+
+CMDBGovAjax.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+
+    /** Full scorecard: all pillars, per-class breakdown, top issues. */
+    getScorecard: function() {
+        return this._respond(function() {
+            return new CMDBGovEngine().scorecard();
+        });
+    },
+
+    /** Records failing one check for one class. */
+    getRecords: function() {
+        var checkId = String(this.getParameter('sysparm_check') || '');
+        var table = String(this.getParameter('sysparm_table') || '');
+        var arg = String(this.getParameter('sysparm_arg') || '');
+        return this._respond(function() {
+            return new CMDBGovEngine().records(checkId, table, arg || undefined);
+        });
+    },
+
+    /** Lightweight connection test for the Settings tab. */
+    testConnection: function() {
+        return this._respond(function() {
+            var cfg = new CMDBGovConfig().get();
+            var ds = new CMDBGovDataSource(cfg);
+            var started = new Date().getTime();
+            var n = ds.count('cmdb_ci', '');
+            return {
+                source: ds.describe(),
+                cmdbCiCount: n,
+                ms: new Date().getTime() - started
+            };
+        });
+    },
+
+    _respond: function(fn) {
+        if (!gs.hasRole('x_cmdbgov_app.viewer'))
+            return JSON.stringify({ ok: false, error: 'You need the x_cmdbgov_app.viewer role to use CMDB Governance.' });
+        try {
+            return JSON.stringify({ ok: true, data: fn() });
+        } catch (e) {
+            var m = (e &amp;&amp; e.message) ? e.message : String(e);
+            gs.error('[CMDB Governance] ' + m);
+            return JSON.stringify({ ok: false, error: m });
+        }
+    },
+
+    type: 'CMDBGovAjax'
+});
+</script><sys_class_name>sys_script_include</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2026-10-18 04:54:05</sys_created_on><sys_id>09057d4ca0e556b5b4e48d87319e05e9</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-10-18 04:54:05</sys_updated_on><sys_update_name>sys_script_include_09057d4ca0e556b5b4e48d87319e05e9</sys_update_name><sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package><sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope></sys_script_include></record_update>]]></payload>
+        <payload_hash>-1073354842</payload_hash>
+        <record_name>CMDBGovAjax</record_name>
+        <reverted_from/>
+        <source>7e87f6c6c348db10d979171ed40131c1</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-10-22 03:53:13</sys_created_on>
+        <sys_id>0b873ac6c348db10d979171ed401318d</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>1a161bdd8000000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-10-22 03:53:13</sys_updated_on>
+        <type>Script Include</type>
+        <update_guid>5d4fa977eeae4fda82558f5307237409</update_guid>
+        <update_guid_history>5d4fa977eeae4fda82558f5307237409:-1073354842</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-11-06 11:08:11</sys_created_on>
+        <sys_db_object display_value="" name="sys_script_include">sys_script_include</sys_db_object>
+        <sys_id>588a137edcbb44e4bd542fe4303e1924</sys_id>
+        <sys_metadata>09057d4ca0e556b5b4e48d87319e05e9</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>CMDBGovAjax</sys_name>
+        <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+        <sys_scope_delete display_value="">14f454919bb24c50962b0ac1f1c00440</sys_scope_delete>
+        <sys_update_name>sys_script_include_09057d4ca0e556b5b4e48d87319e05e9</sys_update_name>
+        <sys_update_version display_value="sys_script_include_09057d4ca0e556b5b4e48d87319e05e9">0b873ac6c348db10d979171ed401318d</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-11-06 11:08:11</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

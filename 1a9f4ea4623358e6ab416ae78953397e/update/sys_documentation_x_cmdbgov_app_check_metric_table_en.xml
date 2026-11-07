@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_documentation element="metric_table" label="Metric table" language="en" table="x_cmdbgov_app_check">
+        <sys_documentation action="INSERT_OR_UPDATE">
+            <element>metric_table</element>
+            <help/>
+            <hint>Table counted by metric checks.</hint>
+            <label>Metric table</label>
+            <language>en</language>
+            <name>x_cmdbgov_app_check</name>
+            <plural>Metric tables</plural>
+            <sys_class_name>sys_documentation</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-11-06 04:59:57</sys_created_on>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>Metric table</sys_name>
+            <sys_package display_value="CMDB Governance" source="x_cmdbgov_app">1a9f4ea4623358e6ab416ae78953397e</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="CMDB Governance">1a9f4ea4623358e6ab416ae78953397e</sys_scope>
+            <sys_update_name>sys_documentation_x_cmdbgov_app_check_metric_table_en</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-11-06 04:59:57</sys_updated_on>
+            <url/>
+            <url_target/>
+        </sys_documentation>
+    </sys_documentation>
+</record_update>

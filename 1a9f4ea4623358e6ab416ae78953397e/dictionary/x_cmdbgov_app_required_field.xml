@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element audit="true" db_object_id="6434f50678e3414fb1155eb6085d43fe" label="Required Field" name="x_cmdbgov_app_required_field" type="collection">
+        <element hint="Leave blank when Applies to all classes is true." label="CI class" max_length="80" name="ci_class" type="table_name"/>
+        <element default="true" label="Active" name="active" type="boolean"/>
+        <element hint="When true the field is required on every governed class and CI class must be left blank." label="Applies to all classes" name="applies_to_all_classes" type="boolean"/>
+        <element display="true" label="Field name" mandatory="true" max_length="80" name="field_name" type="string"/>
+        <index name="index">
+            <element name="ci_class"/>
+            <element name="field_name"/>
+        </index>
+    </element>
+</database>
